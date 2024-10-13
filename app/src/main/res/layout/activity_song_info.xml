@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="16dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center_horizontal">
+
+
+        <ImageButton
+            android:id="@+id/btn_close"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:src="@drawable/ic_back"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:layout_gravity="start"
+            android:contentDescription="@string/close"/>
+        <!-- BPM -->
+        <TextView
+            android:id="@+id/song_creator"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="BPM: "
+            android:textSize="18sp"
+            android:layout_marginBottom="8dp"/>
+
+        <!-- BPM -->
+        <TextView
+            android:id="@+id/song_location"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="BPM: "
+            android:textSize="18sp"
+            android:layout_marginBottom="8dp"/>
+
+
+        <!-- BPM -->
+        <TextView
+            android:id="@+id/song_bpm"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="BPM: "
+            android:textSize="18sp"
+            android:layout_marginBottom="8dp"/>
+
+        <!-- Danceability -->
+        <TextView
+            android:id="@+id/song_danceability"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Danceability: "
+            android:textSize="18sp"
+            android:layout_marginBottom="8dp"/>
+
+        <!-- Loudness -->
+        <TextView
+            android:id="@+id/song_loudness"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Loudness: "
+            android:textSize="18sp"
+            android:layout_marginBottom="8dp"/>
+
+        <!-- Mood Section -->
+        <TextView
+            android:id="@+id/mood_section_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Mood (Top 5):"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:layout_marginTop="16dp"
+            android:layout_marginBottom="8dp"/>
+
+        <LinearLayout
+            android:id="@+id/song_mood_container"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+            <!-- Here you can dynamically add TextViews for each mood -->
+        </LinearLayout>
+
+        <!-- Genre Section -->
+        <TextView
+            android:id="@+id/genre_section_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Genre (Top 5):"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:layout_marginTop="16dp"
+            android:layout_marginBottom="8dp"/>
+
+        <LinearLayout
+            android:id="@+id/song_genre_container"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+            <!-- Here you can dynamically add TextViews for each genre -->
+        </LinearLayout>
+
+        <!-- Instruments Section -->
+        <TextView
+            android:id="@+id/instruments_section_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Instruments (Top 5):"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:layout_marginTop="16dp"
+            android:layout_marginBottom="8dp"/>
+
+        <LinearLayout
+            android:id="@+id/song_instruments_container"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+            <!-- Here you can dynamically add TextViews for each instrument -->
+        </LinearLayout>
+
+    </LinearLayout>
+</ScrollView>

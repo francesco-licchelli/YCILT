@@ -1,3 +1,33 @@
 <resources>
     <string name="app_name">YCILT</string>
+    <string name="address">Indirizzo</string>
+    <string name="password">Password</string>
+    <string name="login">Login</string>
+    <string name="already_have_an_account_login">Already have an account? Login</string>
+    <string name="username">Username</string>
+    <string name="register">Register</string>
+    <string name="don_t_have_an_account_register">Don\'t have an account? Register</string>
+    <string name="title_1">YOUR CITY</string>
+    <string name="title_2">IS</string>
+    <string name="title_3">LISTENING TO</string>
+    <string name="yclit_logo">YCLIT Logo</string>
+    <string name="menu">account menu</string>
+    <string name="add_audio">Upload new audio</string>
+    <string name="filter">Filter content</string>
+    <string name="start_recording">Start new recording</string>
+    <string name="record_new_audio">Record new audio</string>
+    <string name="play_recording">Play recording</string>
+    <string name="upload_new_audio">Upload new audio</string>
+    <string name="close">Close</string>
+    <string name="logout">Logout</string>
+    <string name="delete_account">Delete your account</string>
+    <string name="my_uploads">My uploads</string>
+    <string name="song_id">Song ID</string>
+    <string name="song_privacy_status">Song privacy status</string>
+    <string name="lat">Lat:</string>
+    <string name="longi">Long:</string>
+    <string name="no_uploaded_songs">You haven\'t added any songs yet.</string>
+    <string name="map_view">Map View</string>
+    <string name="default_audio_length">00:00</string>
+    <string name="stop_recording">Stop Recording</string>
 </resources>
