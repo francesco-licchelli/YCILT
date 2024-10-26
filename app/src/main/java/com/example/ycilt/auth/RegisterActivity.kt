@@ -2,20 +2,13 @@ package com.example.ycilt.auth
 
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import android.widget.Button
 import android.widget.EditText
 import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
 import com.example.ycilt.R
-import com.example.ycilt.utils.Constants
-import com.example.ycilt.utils.NetworkUtils
-import com.example.ycilt.utils.NetworkUtils.postRequest
 import kotlinx.coroutines.*
-import org.json.JSONObject
-import java.net.HttpURLConnection
 
-class RegisterActivity : AppCompatActivity() {
+class RegisterActivity : Auther() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -47,30 +40,15 @@ class RegisterActivity : AppCompatActivity() {
 
     private fun performRegistration(username: String, password: String) {
         CoroutineScope(Dispatchers.IO).launch {
-            val (responseStatus, responseBody) = registerRequest(username, password)
-
-            withContext(Dispatchers.Main) {
-                if (responseStatus != HttpURLConnection.HTTP_OK) {
-                    Toast.makeText(this@RegisterActivity, responseBody.getString("detail"), Toast.LENGTH_SHORT).show()
-                    return@withContext
-                }
-                else {
+            val callback: (String) -> Unit = { _ ->
+                runOnUiThread{
                     Toast.makeText(this@RegisterActivity, "Registration successful! Now you can login", Toast.LENGTH_SHORT).show()
-                    val intent = Intent(this@RegisterActivity, LoginActivity::class.java)
-                    startActivity(intent)
                 }
+                val intent = Intent(this@RegisterActivity, LoginActivity::class.java)
+                startActivity(intent)
             }
+            super.perform(username, password, callback)
         }
-    }
-
-    private fun registerRequest(username: String, password: String): Pair<Int, JSONObject> {
-        val (responseCode, responseBody) = postRequest(
-            "auth",
-            this,
-            mapOf("username" to username, "password" to password),
-            encode={NetworkUtils.jsonEncoding(it)}
-        )
-        return Pair(responseCode, JSONObject(responseBody))
     }
 
 }

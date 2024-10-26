@@ -117,7 +117,8 @@ object NetworkUtils {
     fun getRequest(
         endpoint: String,
         authRequest: Context? = null,
-        queryParams: Map<String, String>? = mapOf()
+        queryParams: Map<String, String>? = mapOf(),
+        isFullEndpoint: Boolean = false
     ): Pair<Int, String> {
         val clientSecret = authRequest?.getSharedPreferences("shared_prefs", MODE_PRIVATE)
             ?.getString("client_secret", null)
@@ -126,7 +127,7 @@ object NetworkUtils {
                 authRequest,
                 reqToPair(
                     apiService.getRequest(
-                        "$BASE_URL$endpoint",
+                        if (isFullEndpoint) endpoint else "$BASE_URL$endpoint",
                         "Bearer $clientSecret",
                         queryParams
                     ).execute()
@@ -203,54 +204,6 @@ object NetworkUtils {
         }
     }
 
-/*
-    fun postRequest(
-        endpoint: String,
-        authRequest: Context,
-        queryParams: Map<String, String>,
-        file: Pair<File, String>
-    ): Pair<Int, String> {
-        val clientSecret = authRequest.getSharedPreferences("shared_prefs", MODE_PRIVATE)
-            ?.getString("client_secret", null)
-
-        if (clientSecret == null) {
-            return Pair(
-                HttpURLConnection.HTTP_UNAUTHORIZED,
-                mapOf("detail" to "Missing client_secret").toString()
-            )
-        }
-
-        return try {
-            val filePart = MultipartBody.Part.createFormData(
-                "file", file.first.name,
-                file.first.asRequestBody(file.second.toMediaType())
-            )
-
-            // Prepara i parametri di query
-            val queryString = queryParams.entries.joinToString("&") { "${it.key}=${it.value}" }
-            val fullUrl = "$BASE_URL$endpoint?$queryString"
-
-            // Esegue la richiesta POST con il file e i parametri
-            val response = apiService.postRequest(
-                fullUrl,
-                "Bearer $clientSecret",
-                queryParams,
-                filePart
-            ).execute()
-
-            // Controlla il token e processa la risposta
-            checkToken(authRequest, reqToPair(response))
-
-        } catch (e: Exception) {
-            e.printStackTrace()
-            Pair(
-                HttpURLConnection.HTTP_INTERNAL_ERROR,
-                mapOf("detail" to "An error occurred during the request").toString()
-            )
-        }
-    }
-
-*/
     fun deleteRequest(
         endpoint: String,
         authRequest: Context,

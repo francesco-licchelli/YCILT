@@ -8,3 +8,4 @@ data class MySong(
     val duration: Long, // Durata in millisecondi
     val date: String // Orario di registrazione
 )
+//TODO posso togliere questa classe ?

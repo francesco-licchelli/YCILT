@@ -15,6 +15,7 @@ import java.io.File
 
 class SongsAdapter(
     private val songs: List<Pair<File, JSONObject>>,
+    private val is_logged_in: Boolean,
     private val onVisibilityToggle: (MySong) -> Unit
 ) : RecyclerView.Adapter<SongsAdapter.SongViewHolder>() {
 
@@ -37,6 +38,7 @@ class SongsAdapter(
             Log.d("SongsAdapter", "Song clicked: ${songFile.name}")
             Log.d("SongsAdapter", "Song metadata: $metadata")
             val intent = Intent(holder.itemView.context, MySongInfoActivity::class.java)
+            intent.putExtra("is_logged_in", is_logged_in)
             intent.putExtra("songName", songFile.name)
             intent.putExtra("songMetadata", metadata.toString())
             holder.itemView.context.startActivity(intent)

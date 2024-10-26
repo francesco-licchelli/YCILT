@@ -9,6 +9,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.example.ycilt.MainActivity
 import com.example.ycilt.R
+import com.example.ycilt.mysongs.MySongsActivity
 import com.example.ycilt.utils.Constants
 import com.example.ycilt.utils.NetworkUtils
 import com.example.ycilt.utils.NetworkUtils.postRequest
@@ -17,7 +18,7 @@ import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.util.Date
 
-class LoginActivity : AppCompatActivity() {
+class LoginActivity : Auther() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -26,10 +27,7 @@ class LoginActivity : AppCompatActivity() {
         val usernameEditText = findViewById<EditText>(R.id.username)
         val passwordEditText = findViewById<EditText>(R.id.password)
 
-        val loginButton = findViewById<Button>(R.id.btn_login)
-        val switchToRegisterButton = findViewById<Button>(R.id.btn_login_to_reg)
-
-        loginButton.setOnClickListener {
+        findViewById<Button>(R.id.btn_login).setOnClickListener {
             val username = usernameEditText.text.toString()
             val password = passwordEditText.text.toString()
 
@@ -41,44 +39,35 @@ class LoginActivity : AppCompatActivity() {
                 performLogin(username, password)
         }
 
-        switchToRegisterButton.setOnClickListener {
+        findViewById<Button>(R.id.btn_login_to_reg).setOnClickListener {
             val intent = Intent(this, RegisterActivity::class.java)
             startActivity(intent)
             finish()
+        }
+
+        findViewById<Button>(R.id.btn_display_songs).setOnClickListener{
+            val intent = Intent(this, MySongsActivity::class.java)
+            intent.putExtra("is_logged_in", false)
+            startActivity(intent)
         }
     }
 
     private fun performLogin(username: String, password: String) {
         CoroutineScope(Dispatchers.IO).launch {
-            val (responseStatus, responseBody) = loginRequest(username, password)
+            val callback: (String) -> Unit = { responseBody ->
+                val responseJson = JSONObject(responseBody)
+                val clientSecret = responseJson.getString("client_secret")
+                val sharedPreferences = getSharedPreferences(Constants.SHARED_PREFS, MODE_PRIVATE)
+                sharedPreferences.edit().putString("client_secret", clientSecret).apply()
+                LoginManager.onLoginSuccess()
+                val intent = Intent(this@LoginActivity, MainActivity::class.java)
+                startActivity(intent)
+                finish()
 
-            withContext(Dispatchers.Main) {
-                if (responseStatus != HttpURLConnection.HTTP_OK) {
-                    Toast.makeText(this@LoginActivity, responseBody.getString("detail"), Toast.LENGTH_SHORT).show()
-                    return@withContext
-                }
-                else {
-                    val clientSecret = responseBody.getString("client_secret")
-                    val sharedPreferences = getSharedPreferences(Constants.SHARED_PREFS, MODE_PRIVATE)
-                    sharedPreferences.edit().putString("client_secret", clientSecret).apply()
-                    val intent = Intent(this@LoginActivity, MainActivity::class.java)
-                    startActivity(intent)
-                    finish()
-                }
             }
+            super.perform(username, password, callback)
         }
     }
 
-    private fun loginRequest(username: String, password: String): Pair<Int, JSONObject> {
-        val (responseCode, responseBody) = postRequest(
-            "auth/token",
-            this,
-            postData=mapOf("username" to username, "password" to password),
-            encode={NetworkUtils.wwwEncoding(it)}
-        )
-        Log.d("LoginActivity", "Login request response code: $responseCode")
-        Log.d("LoginActivity", "Login request response body: $responseBody")
-        return Pair(responseCode, JSONObject(responseBody))
-    }
 
 }

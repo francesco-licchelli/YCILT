@@ -14,17 +14,17 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.ycilt.R
 import com.example.ycilt.auth.LoginActivity
-import com.example.ycilt.utils.Constants.MISSING_LOCATION
-import com.example.ycilt.utils.Misc
 import com.example.ycilt.utils.NetworkUtils.getRequest
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
+import org.json.JSONException
 import org.json.JSONObject
 import java.io.File
 import java.io.IOException
+import kotlin.math.min
 
 class MySongsActivity : AppCompatActivity() {
 
@@ -40,11 +40,11 @@ class MySongsActivity : AppCompatActivity() {
         recyclerView = findViewById(R.id.recyclerView_songs)
         recyclerView.layoutManager = LinearLayoutManager(this)
 
-        // Inizializza e registra il launcher per ricevere i risultati da MySongInfoActivity
         songInfoLauncher = registerForActivityResult(
             ActivityResultContracts.StartActivityForResult()
         ) { result ->
             if (result.resultCode == RESULT_OK) {
+                //TODO sistemare questo Edit: che commento e'???
                 val deletedSongName = result.data?.getStringExtra("deletedSongName")
                 if (deletedSongName != null) {
                     removeSongFromList(deletedSongName)
@@ -52,10 +52,11 @@ class MySongsActivity : AppCompatActivity() {
             }
         }
 
-        //fetchSongsFromBackend() // Chiamata alla funzione per recuperare le canzoni
-        Log.d("MySongsActivity", "Songs fetched from local storage: ${getSongs()}")
+    }
+
+    override fun onResume() {
+        super.onResume()
         displaySongs(getSongs())
-        // idea: calcolare diff tra canzoni in backend e locali e caricare le canzoni non ancora caricate
     }
 
     private fun getAudioDuration(mp3File: File): Long {
@@ -71,11 +72,11 @@ class MySongsActivity : AppCompatActivity() {
         }
     }
 
-    fun getAllJsonFiles(): List<File> {
+    private fun getAllJsonFiles(): List<File> {
         return filesDir.listFiles()?.filter { it.extension == "json" } ?: emptyList()
     }
 
-    fun readJsonFromFile(file: File): List<JSONObject> {
+    private fun readJsonFromFile(file: File): List<JSONObject> {
         val jsonList = mutableListOf<JSONObject>()
         try {
             val jsonString = file.readText() // Leggi il contenuto del file
@@ -87,17 +88,33 @@ class MySongsActivity : AppCompatActivity() {
         return jsonList
     }
 
-    private fun getSongs(): List<Pair<File, JSONObject>> {
-        CoroutineScope(Dispatchers.IO).launch {
+    suspend fun getOnlineSongs(): JSONArray? {
+        return withContext(Dispatchers.IO) {
             val (responseCode, responseBody) = getRequest(
                 "audio/my",
                 authRequest = this@MySongsActivity,
             )
-            if (responseCode != 200) {
-                Log.d("MySongsActivity", "Failed to load songs: $responseCode")
-                val intent = Intent(this@MySongsActivity, LoginActivity::class.java)
-                intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                startActivity(intent)
+            if (responseCode == 200) {
+                try {
+                    JSONArray(responseBody)
+                } catch (e: JSONException) {
+                    e.printStackTrace()
+                    null
+                }
+            } else {
+                null
+            }
+        }
+    }
+
+
+    private fun getSongs(): List<Pair<File, JSONObject>> {
+        CoroutineScope(Dispatchers.IO).launch {
+            var remoteSongs = JSONArray()
+            if (intent.getBooleanExtra("is_logged_in", false)){
+                val remoteData = getOnlineSongs()
+                if (remoteData != null)
+                    remoteSongs = remoteData
             }
             //load all json from backend
             val jsonFiles = getAllJsonFiles()
@@ -108,25 +125,15 @@ class MySongsActivity : AppCompatActivity() {
                 val jsonObjectsFromFile = readJsonFromFile(file)
                 localData.addAll(jsonObjectsFromFile)
             }
-            Log.d("MySongsActivity", "Local data: $localData")
 
-            val remoteData = JSONArray(responseBody)
-            Log.d("MySongsActivity", "Remote data: $remoteData")
-
-            for (i in 0 until remoteData.length()) {
-                if (
-                    localData[i].getInt("id") !=
-                    remoteData.getJSONObject(i).getInt("id")
-                    ) {
-                    val metadataFile = File(
-                        localData[i].getString("file_name").replace(".mp3", "_metadata.json")
-                    )
-                    metadataFile.writeText(localData[i].toString())
-                }
+            for (i in 0 until min(localData.size, remoteSongs.length())) {
+                val metadataFile = File(
+                    localData[i].getString("file_name").replace(".mp3", "_metadata.json")
+                )
+                localData[i].put("id", remoteSongs.getJSONObject(i).getInt("id"))
+                localData[i].put("hidden", remoteSongs.getJSONObject(i).getBoolean("hidden"))
+                metadataFile.writeText(localData[i].toString())
             }
-
-            Log.d("MySongsActivity", "Response code: $responseCode")
-            Log.d("MySongsActivity", "Response body: $responseBody")
         }
         val audioDir = filesDir
         songsList.clear()
@@ -150,15 +157,22 @@ class MySongsActivity : AppCompatActivity() {
 
     private fun displaySongs(songs: List<Pair<File, JSONObject>>) {
         CoroutineScope(Dispatchers.IO).launch {
+            runOnUiThread{
+                findViewById<TextView>(R.id.loading_songs).visibility = View.GONE
+                recyclerView.visibility = View.VISIBLE
+            }
             withContext(Dispatchers.Main) {
                 Log.d("MySongsActivity", "Displaying songs: $songs")
                 if (songs.isEmpty()) {
+                    Log.d("MySongsActivity", "bla bla bla")
                     findViewById<TextView>(R.id.no_songs_message).visibility = View.VISIBLE
                     recyclerView.visibility = View.GONE
                 } else {
                     findViewById<TextView>(R.id.no_songs_message).visibility = View.GONE
                     recyclerView.visibility = View.VISIBLE
-                    adapter = SongsAdapter(songsList) { updatedSong ->
+                    adapter = SongsAdapter(songsList,
+                        intent.getBooleanExtra("is_logged_in", false)
+                    ) { updatedSong ->
                         updateSongVisibility(updatedSong)
                     }
                     recyclerView.adapter = adapter
@@ -166,49 +180,6 @@ class MySongsActivity : AppCompatActivity() {
             }
         }
     }
-
-    /* private fun fetchSongsFromBackend() {
-        CoroutineScope(Dispatchers.IO).launch {
-            val (responseCode, responseBody) = getRequest(
-                "audio/my",
-                authRequest = this@MySongsActivity,
-            )
-            try {
-                val responseArray = JSONArray(responseBody)
-                val mySongList = mutableListOf<MySong>()
-
-                for (i in 0 until responseArray.length()) {
-                    val songJson = responseArray.getJSONObject(i)
-                    val mySong = MySong(
-                        id = songJson.getInt("id"),
-                        latitude = songJson.getDouble("latitude"),
-                        longitude = songJson.getDouble("longitude"),
-                        hidden = songJson.getBoolean("hidden")
-                    )
-                    mySongList.add(mySong)
-                }
-            } catch (e: JSONException){
-                val responseJson = JSONObject(responseBody)
-                withContext(Dispatchers.Main) {
-                    Log.d("MySongsActivity", "Failed to load songs: $responseCode")
-                    Toast.makeText(
-                        this@MySongsActivity,
-                        responseJson.getString("detail"),
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
-            } catch (e: JSONException) {
-                withContext(Dispatchers.Main) {
-                    Log.d("MySongsActivity", "Failed to load songs: $responseCode")
-                    Toast.makeText(
-                        this@MySongsActivity,
-                        "Failed to load songs: $responseCode",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
-            }
-        }
-    }*/
 
     private fun updateSongVisibility(updatedMySong: MySong) {
         CoroutineScope(Dispatchers.IO).launch {

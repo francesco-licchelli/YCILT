@@ -4,11 +4,13 @@ import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.location.Location
+import android.media.Image
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
-import android.view.ViewAnimationUtils
+import android.view.KeyEvent
+import android.view.inputmethod.EditorInfo
 import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.Toast
@@ -23,9 +25,9 @@ import com.example.ycilt.mysongs.MySongsActivity
 import com.example.ycilt.otherssongs.SongInfoActivity
 import com.example.ycilt.utils.Constants
 import com.example.ycilt.utils.Constants.LOCATION_PERMISSION_REQUEST_CODE
+import com.example.ycilt.utils.Misc
 import com.example.ycilt.utils.NetworkUtils.deleteRequest
 import com.example.ycilt.utils.NetworkUtils.getRequest
-import com.example.ycilt.otherssongs.SongPreview
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.CameraUpdateFactory
@@ -38,10 +40,11 @@ import com.google.android.material.navigation.NavigationView
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
-import kotlin.math.hypot
+import java.net.HttpURLConnection
 
 class MainActivity : AppCompatActivity(), OnMapReadyCallback {
 
@@ -63,7 +66,6 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
             finish()
         }
 
-
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
 
         var mapViewBundle: Bundle? = null
@@ -75,31 +77,17 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         mapView.onCreate(mapViewBundle)
         mapView.getMapAsync(this)
 
-        val menuIButton = findViewById<ImageButton>(R.id.btn_menu)
-        val addressEditText = findViewById<EditText>(R.id.searchAddress)
-        val filterIButton = findViewById<ImageButton>(R.id.btn_filter)
-        val resyncGPSIButton = findViewById<ImageButton>(R.id.btn_resync_gps)
         val drawerLayout = findViewById<DrawerLayout>(R.id.drawer_layout)
-        val navigationView = findViewById<NavigationView>(R.id.navigation_view)
-        recordIButton = findViewById(R.id.btn_record_audio)
 
-
-        filterIButton.setOnClickListener{
-            CoroutineScope(Dispatchers.IO).launch {
-                val (responseCode, responseBody) = getRequest(
-                    "audio/my",
-                    authRequest = this@MainActivity,
-                )
-                Log.d("MainActivity", "Response code: $responseCode")
-                Log.d("MainActivity", "Response body: $responseBody")
-            }.start()
+        findViewById<ImageButton>(R.id.btn_resync_gps).setOnClickListener {
+            userLocation?.let { _ ->
+                getUserLocationAndUpdateMap()
+            } ?: run {
+                Toast.makeText(this, "Location not available. Cannot resync GPS.", Toast.LENGTH_SHORT).show()
+            }
         }
 
-        resyncGPSIButton.setOnClickListener {
-            getUserLocationAndUpdateMap()
-        }
-
-        recordIButton?.setOnClickListener {
+        findViewById<ImageButton>(R.id.btn_record_audio).setOnClickListener {
             userLocation?.let { location ->
                 val intent = Intent(this, AudioRecorderActivity::class.java).apply{
                     putExtra("latitude", location.latitude)
@@ -109,16 +97,31 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
             } ?: run {
                 Toast.makeText(this, "Location not available. Cannot start recording.", Toast.LENGTH_SHORT).show()
             }
-
         }
 
-        menuIButton.setOnClickListener {
+        findViewById<ImageButton>(R.id.btn_menu).setOnClickListener {
             if (!drawerLayout.isDrawerOpen(GravityCompat.START))
                 drawerLayout.openDrawer(GravityCompat.START)
             else
                 drawerLayout.closeDrawer(GravityCompat.START)
         }
-        navigationView.setNavigationItemSelectedListener { menuItem ->
+
+        findViewById<EditText>(R.id.searchAddress).setOnEditorActionListener { v, actionId, event ->
+            if (actionId == EditorInfo.IME_ACTION_DONE ||
+                (event != null && event.keyCode == KeyEvent.KEYCODE_ENTER && event.action == KeyEvent.ACTION_DOWN)) {
+                CoroutineScope(Dispatchers.Main).launch {
+                    if (showLocation(v.text.toString())) {
+                        v.clearFocus()
+                        v.text = null
+                    }
+                }
+                true
+            } else {
+                false
+            }
+        }
+
+        findViewById<NavigationView>(R.id.navigation_view).setNavigationItemSelectedListener { menuItem ->
             when (menuItem.itemId) {
                 R.id.drawer_logout -> {
                     val intent = Intent(this, LoginActivity::class.java)
@@ -153,36 +156,69 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
                 }
                 R.id.drawer_my_songs -> {
                     val intent = Intent(this, MySongsActivity::class.java)
+                    intent.putExtra("is_logged_in", true)
                     startActivity(intent)
                 }
             }
             true
         }
 
+
         checkLocationPermission()
+    }
+
+    private fun getApiKeyFromManifest(): String? {
+        return try {
+            val applicationInfo = packageManager.getApplicationInfo(packageName, PackageManager.GET_META_DATA)
+            val bundle = applicationInfo.metaData
+            bundle.getString("com.google.android.geo.API_KEY")
+        } catch (e: PackageManager.NameNotFoundException) {
+            e.printStackTrace()
+            null
+        }
+    }
+
+    private suspend fun showLocation(address: String): Boolean {
+        return withContext(Dispatchers.IO) {
+            val apiKey = getApiKeyFromManifest() ?: ""
+            val result = Misc.addrToCoord(address, apiKey)
+
+            if (result == null) {
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(this@MainActivity, "Error while resolving the address", Toast.LENGTH_SHORT).show()
+                }
+                return@withContext false
+            }
+
+            val (lat, lng) = result
+            withContext(Dispatchers.Main) {
+                userLocation = LatLng(lat, lng)
+                googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(userLocation!!, 16f))
+            }
+
+            return@withContext true
+        }
     }
 
 
     private fun loadSongs() {
+        googleMap.clear()
         CoroutineScope(Dispatchers.IO).launch {
             val (responseCode, responseBody) = getRequest(
                 "audio/all",
                 authRequest = this@MainActivity,
             )
-            Log.d("MainActivity", "Response code: $responseCode")
-            Log.d("MainActivity", "Response body: $responseBody")
-            try{ //oppure, come anche per MySongsActivity.fetchSongsFromBackend, dovrei usare un if sul code?
+            if (responseCode != HttpURLConnection.HTTP_OK){
+                runOnUiThread{ Misc.displayError(this@MainActivity, responseBody) }
+                val intent = Intent(this@MainActivity, LoginActivity::class.java)
+                intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                startActivity(intent)
+                finish()
+            }
+            try{
                 val songs = JSONArray(responseBody)
-                val songsList = mutableListOf<SongPreview>()
                 for (i in 0 until songs.length()) {
                     val songJson = songs.getJSONObject(i)
-                    songsList.add(
-                        SongPreview(
-                            id = songJson.getInt("id"),
-                            latitude = songJson.getDouble("latitude"),
-                            longitude = songJson.getDouble("longitude"),
-                        )
-                    )
                     runOnUiThread {
                         val marker = this@MainActivity.googleMap.addMarker(
                             MarkerOptions().position(
@@ -194,15 +230,13 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
                         marker?.tag = songJson.getInt("id")
                     }
                 }
-
             }
             catch (e: JSONException) {
-                val responseJson = JSONObject(responseBody)
                 runOnUiThread {
                     Log.d("MainActivity", "Failed to load songs: $responseCode")
                     Toast.makeText(
                         this@MainActivity,
-                        responseJson.getString("detail"),
+                        "Failed to load songs: error $responseCode",
                         Toast.LENGTH_SHORT
                     ).show()
                 }
@@ -287,7 +321,12 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
     override fun onResume() {
         super.onResume()
         mapView.onResume()
-        checkLocationPermission()
+        getUserLocationAndUpdateMap()
+        if (::googleMap.isInitialized) {
+            loadSongs()
+        } else {
+            mapView.getMapAsync(this)
+        }
     }
 
     override fun onPause() {

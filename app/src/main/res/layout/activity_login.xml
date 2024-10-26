@@ -103,7 +103,6 @@
         </LinearLayout>
     </androidx.cardview.widget.CardView>
 
-    <!-- Pulsante login -->
     <Button
         android:id="@+id/btn_login"
         android:layout_width="match_parent"
@@ -114,12 +113,20 @@
         android:layout_marginTop="16dp" />
 
 
-    <!-- Pulsante switch a register -->
     <Button
         android:id="@+id/btn_login_to_reg"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="@string/don_t_have_an_account_register"
+        android:textColor="@android:color/white"
+        android:background="@drawable/rounded_button"
+        android:layout_marginTop="16dp" />
+
+    <Button
+        android:id="@+id/btn_display_songs"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/my_songs"
         android:textColor="@android:color/white"
         android:background="@drawable/rounded_button"
         android:layout_marginTop="16dp" />

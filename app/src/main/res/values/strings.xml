@@ -30,4 +30,9 @@
     <string name="map_view">Map View</string>
     <string name="default_audio_length">00:00</string>
     <string name="stop_recording">Stop Recording</string>
+    <string name="set_private">Set private</string>
+    <string name="set_public">Set public</string>
+    <string name="my_songs">My songs</string>
+    <string name="fetching_songs">Fetching songs...</string>
+    <string name="view_recording_info">View Recording Info</string>
 </resources>
