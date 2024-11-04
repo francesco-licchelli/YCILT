@@ -11,9 +11,8 @@
         android:id="@+id/coordinatesTextView"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Latitude: 0.0, Longitude: 0.0"
-        android:gravity="center_horizontal"
-        android:visibility="gone" /> <!-- Inizialmente nascosto -->
+        android:text="@string/loading_location"
+        android:gravity="center_horizontal"/> <!-- Inizialmente nascosto -->
 
     <!-- TextView per mostrare l'indirizzo -->
     <TextView
@@ -21,7 +20,6 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center_horizontal"
-        android:text="Address"
         android:visibility="gone" /> <!-- Inizialmente nascosto -->
 
 </LinearLayout>

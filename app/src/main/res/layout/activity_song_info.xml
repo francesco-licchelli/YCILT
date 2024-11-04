@@ -25,7 +25,6 @@
             android:id="@+id/song_creator"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Author: "
             android:textSize="18sp"
             android:layout_marginBottom="8dp"/>
 
@@ -38,7 +37,6 @@
             android:id="@+id/song_bpm"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="BPM: "
             android:textSize="18sp"
             android:layout_marginBottom="8dp"/>
 
@@ -47,7 +45,6 @@
             android:id="@+id/song_danceability"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Danceability: "
             android:textSize="18sp"
             android:layout_marginBottom="8dp"/>
 
@@ -56,16 +53,13 @@
             android:id="@+id/song_loudness"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Loudness: "
             android:textSize="18sp"
             android:layout_marginBottom="8dp"/>
 
         <!-- Mood Section -->
         <TextView
-            android:id="@+id/mood_section_title"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Mood (Top 5):"
             android:textSize="20sp"
             android:textStyle="bold"
             android:layout_marginTop="16dp"
@@ -81,10 +75,8 @@
 
         <!-- Genre Section -->
         <TextView
-            android:id="@+id/genre_section_title"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Genre (Top 5):"
             android:textSize="20sp"
             android:textStyle="bold"
             android:layout_marginTop="16dp"
@@ -100,10 +92,8 @@
 
         <!-- Instruments Section -->
         <TextView
-            android:id="@+id/instruments_section_title"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Instruments (Top 5):"
             android:textSize="20sp"
             android:textStyle="bold"
             android:layout_marginTop="16dp"
@@ -114,7 +104,6 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:orientation="vertical">
-            <!-- Here you can dynamically add TextViews for each instrument -->
         </LinearLayout>
 
     </LinearLayout>

@@ -17,7 +17,6 @@
         android:contentDescription="@string/close"/>
 
     <TextView
-        android:id="@+id/tv_record_audio"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/record_new_audio"

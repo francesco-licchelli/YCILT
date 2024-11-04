@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
@@ -9,7 +10,7 @@
         android:id="@+id/song_info_name"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Song Name"
+        android:text="@string/song_name"
         android:textSize="18sp"
         android:textStyle="bold" />
 
@@ -29,34 +30,22 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textAlignment="center"
-            android:text="Delete Song"
+            android:text="@string/delete_song"
             android:layout_weight="1"
-            android:layout_marginTop="16dp" />
-    </LinearLayout>
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:visibility="gone"
-        android:id="@+id/privacy_buttons_lay">
-        <Button
-            android:id="@+id/privacy_button_public"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/set_public"
-            android:layout_weight="1"
-            android:layout_marginTop="16dp" />
+            tools:ignore="ButtonStyle" />
 
         <Button
-            android:id="@+id/privacy_button_private"
+            android:id="@+id/privacy_button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/set_private"
+            android:text="@string/change_song_s_privacy"
             android:layout_weight="1"
-            android:layout_marginTop="16dp" />
+            tools:ignore="ButtonStyle" />
+
     </LinearLayout>
+
     <include layout="@layout/player"/>
+
     <Button
         android:id="@+id/btn_view_info"
         android:layout_width="wrap_content"
