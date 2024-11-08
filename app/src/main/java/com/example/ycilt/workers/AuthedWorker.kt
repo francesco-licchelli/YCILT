@@ -32,4 +32,17 @@ abstract class AuthedWorker(context: Context, params: WorkerParameters) : Worker
 		}
 	}
 
+	fun parseResult(result: Pair<Int, String>): Result {
+		val (responseCode, responseBody) = result
+		return if (responseCode == 200) {
+			val data = Data.Builder()
+				.putInt("responseCode", responseCode)
+				.putString("responseBody", responseBody)
+				.build()
+			Result.success(data)
+		} else {
+			Result.failure()
+		}
+	}
+
 }

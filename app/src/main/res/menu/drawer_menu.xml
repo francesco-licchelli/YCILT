@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item
-        android:id="@+id/drawer_my_songs"
+        android:id="@+id/drawer_my_audio"
         android:title="@string/my_uploads"
         android:icon="@drawable/ic_note" />
 

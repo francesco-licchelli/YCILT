@@ -3,10 +3,13 @@ package com.example.ycilt.utils
 import android.content.Context
 import android.content.Context.MODE_PRIVATE
 import android.content.Intent
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.util.Log
 import com.example.ycilt.R
 import com.example.ycilt.auth.LoginActivity
-import com.example.ycilt.utils.Constants.BASE_URL
+import com.example.ycilt.utils.Keys.TOKEN
+import com.example.ycilt.utils.Urls.BASE_URL
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
@@ -123,7 +126,7 @@ object NetworkUtils {
 		isFullEndpoint: Boolean = false
 	): Pair<Int, String> {
 		val clientSecret = context.getSharedPreferences("shared_prefs", MODE_PRIVATE)
-			?.getString(Constants.TOKEN, null)
+			?.getString(TOKEN, null)
 		return try {
 			val result = reqToPair(
 				apiService.getRequest(
@@ -154,7 +157,7 @@ object NetworkUtils {
 		encode: (Map<String, String>) -> RequestBody = { jsonEncoding(it) }
 	): Pair<Int, String> {
 		val clientSecret = context.getSharedPreferences("shared_prefs", MODE_PRIVATE)
-			?.getString(Constants.TOKEN, null)
+			?.getString(TOKEN, null)
 		return try {
 			val result = reqToPair(
 				apiService.postRequest(
@@ -186,7 +189,7 @@ object NetworkUtils {
 		audio: File //carico solo audio/mpeg, non generalizzo
 	): Pair<Int, String> {
 		val clientSecret = context.getSharedPreferences("shared_prefs", MODE_PRIVATE)
-			?.getString(Constants.TOKEN, null)
+			?.getString(TOKEN, null)
 		return try {
 			val filePart = MultipartBody.Part.createFormData(
 				"file", audio.name,
@@ -220,7 +223,7 @@ object NetworkUtils {
 		loginRequired: Boolean = false
 	): Pair<Int, String> {
 		val clientSecret = context.getSharedPreferences("shared_prefs", MODE_PRIVATE)
-			?.getString(Constants.TOKEN, null)
+			?.getString(TOKEN, null)
 		return try {
 			val result = reqToPair(
 				apiService.deleteRequest(
@@ -241,4 +244,13 @@ object NetworkUtils {
 			)
 		}
 	}
+
+}
+
+fun isConnectedToWifi(context: Context): Boolean {
+	val connectivityManager =
+		context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+	val network = connectivityManager.activeNetwork ?: return true
+	val networkCapabilities = connectivityManager.getNetworkCapabilities(network) ?: return true
+	return networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)
 }

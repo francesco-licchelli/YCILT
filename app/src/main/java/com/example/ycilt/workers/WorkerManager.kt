@@ -39,7 +39,9 @@ object WorkerManager {
 		tags: List<String> = emptyList(),
 		onSucceeded: () -> Unit = {},
 		onFailed: () -> Unit = {},
+		beforeWork: () -> Unit = {}
 	) {
+		beforeWork()
 		val workBuilder = workerBuilderType
 			.setInputData(inputData)
 			.setConstraints(constraints)

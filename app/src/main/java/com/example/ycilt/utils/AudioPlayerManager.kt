@@ -82,8 +82,10 @@ class AudioPlayerManager(
 
 		mediaPlayer?.setOnCompletionListener {
 			handler.removeCallbacks(runnable!!)
-			seekBar.progress = seekBar.max
-			currentTimeView.text = formatTime(seekBar.max)
+			seekBar.progress = 0
+			currentTimeView.text = formatTime(0)
+			playButton.setImageResource(R.drawable.ic_play)
+			isPlaying = false
 		}
 	}
 

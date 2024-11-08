@@ -1,4 +1,4 @@
-package com.example.ycilt.otherssongs
+package com.example.ycilt.others_audio
 
 import com.example.ycilt.utils.Misc
 import org.json.JSONObject
@@ -12,7 +12,7 @@ data class Category(val options: Map<String, Float>) {
 	}
 }
 
-data class SongDetails(
+data class AudioDetails(
 	val creator: String,
 	val latitude: Double,
 	val longitude: Double,
@@ -23,21 +23,21 @@ data class SongDetails(
 	val genre: Category,
 	val instrument: Category,
 ) {
-	constructor(songJson: JSONObject) : this(
-		creator = songJson.getString("creator_username"),
-		latitude = songJson.getDouble("latitude"),
-		longitude = songJson.getDouble("longitude"),
-		bpm = songJson.getJSONObject("tags").getInt("bpm"),
+	constructor(audioJson: JSONObject) : this(
+		creator = audioJson.getString("creator_username"),
+		latitude = audioJson.getDouble("latitude"),
+		longitude = audioJson.getDouble("longitude"),
+		bpm = audioJson.getJSONObject("tags").getInt("bpm"),
 		/*
 			danceability, secondo le specifiche, dovrebbe essere un valore compreso in [0, 1].
 			Tuttavia, alcuni audio gia' presenti nel backend hanno valori maggiori di 1.
 			Ignoro la cosa per il momento
 		*/
-		danceability = songJson.getJSONObject("tags").getDouble("danceability") * 100,
-		loudness = songJson.getJSONObject("tags").getDouble("loudness"),
-		mood = Misc.jsonToCat(songJson.getJSONObject("tags").getJSONObject("mood")),
-		genre = Misc.jsonToCat(songJson.getJSONObject("tags").getJSONObject("genre")),
-		instrument = Misc.jsonToCat(songJson.getJSONObject("tags").getJSONObject("instrument"))
+		danceability = audioJson.getJSONObject("tags").getDouble("danceability") * 100,
+		loudness = audioJson.getJSONObject("tags").getDouble("loudness"),
+		mood = Misc.jsonToCat(audioJson.getJSONObject("tags").getJSONObject("mood")),
+		genre = Misc.jsonToCat(audioJson.getJSONObject("tags").getJSONObject("genre")),
+		instrument = Misc.jsonToCat(audioJson.getJSONObject("tags").getJSONObject("instrument"))
 	)
 
 }

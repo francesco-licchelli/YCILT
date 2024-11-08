@@ -6,9 +6,9 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import android.widget.Toast
-import com.example.ycilt.otherssongs.Category
-import com.example.ycilt.utils.Constants.ADDR_TO_COORD_API
+import com.example.ycilt.others_audio.Category
 import com.example.ycilt.utils.NetworkUtils.getRequest
+import com.example.ycilt.utils.Urls.ADDR_TO_COORD_API
 import org.json.JSONException
 import org.json.JSONObject
 
@@ -18,16 +18,37 @@ fun Int.toBoolean() = this != 0
 object Constants {
 	const val MAP_VIEW_BUNDLE_KEY: String = "MapViewBundleKey"
 	const val MAX_FILE_SIZE: Long = 5 * 1024 * 1024
-	const val BASE_URL = "http://130.136.2.83/lam2024/"
-	const val SHARED_PREFS = "shared_prefs"
-	const val LOCATION_PERMISSION_REQUEST_CODE = 1000
 	const val NOT_UPLOADED = -1
-	const val ADDR_TO_COORD_API = "https://maps.googleapis.com/maps/api/geocode/json"
-	const val BROADCAST_UPLOAD = "com.example.ycilt.SONG_UPLOADED"
+	const val DEFAULT_FETCH_AUDIO_DELAY = 5000L
+	const val MAX_FETCH_AUDIO_DELAY = 10000L
+}
+
+object Workers {
+	const val NOTIFICATION_CHANNEL_ID = "yclit_channel"
+}
+
+object Keys {
 	const val TOKEN = "client_secret"
-	const val DEFAULT_FETCH_SONG_DELAY = 5000L
-	const val PUBLIC_SONG = 0
-	const val PRIVATE_SONG = 1
+	const val IS_LOGGED = "is_logged_in"
+	const val SHARED_PREFS = "shared_prefs"
+}
+
+object Urls {
+	const val BASE_URL = "http://130.136.2.83/lam2024/"
+	const val ADDR_TO_COORD_API = "https://maps.googleapis.com/maps/api/geocode/json"
+}
+
+object PermissionCodes {
+	const val LOCATION_PERMISSION_REQUEST_CODE = 1000
+	const val INTERNET_PERMISSION_REQUEST_CODE = 1001
+	const val AUDIO_RECORD_PERMISSION_REQUEST_CODE = 1002
+	const val SEND_NOTIFICATION_PERMISSION_REQUEST_CODE = 1003
+}
+
+object Privacy {
+	const val UNKNOWN_PRIVACY = -1
+	const val PUBLIC_AUDIO = 0
+	const val PRIVATE_AUDIO = 1
 }
 
 
@@ -118,7 +139,6 @@ object Misc {
 
 
 	val activeToasts = mutableListOf<Toast>()
-
 	fun displayToast(context: Context, message: String) {
 		activeToasts.forEach { it.cancel() }
 		activeToasts.clear()
@@ -132,6 +152,14 @@ object Misc {
 				activeToasts.remove(toast)
 			}
 		})
+	}
+
+	fun audioToMetadataFilename(audioFilename: String): String {
+		return audioFilename.replace(".mp3", "_metadata.json")
+	}
+
+	fun metadataToAudioFilename(metadataFilename: String): String {
+		return metadataFilename.replace("_metadata.json", ".mp3")
 	}
 
 }

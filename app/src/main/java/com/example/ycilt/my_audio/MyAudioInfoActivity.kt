@@ -1,4 +1,4 @@
-package com.example.ycilt.mysongs
+package com.example.ycilt.my_audio
 
 import android.content.Intent
 import android.media.MediaPlayer
@@ -14,30 +14,32 @@ import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import com.example.ycilt.R
-import com.example.ycilt.otherssongs.SongInfoActivity
+import com.example.ycilt.others_audio.AudioInfoActivity
 import com.example.ycilt.utils.AudioPlayerManager
 import com.example.ycilt.utils.Constants.NOT_UPLOADED
-import com.example.ycilt.utils.Constants.PRIVATE_SONG
-import com.example.ycilt.utils.Constants.PUBLIC_SONG
+import com.example.ycilt.utils.Keys.IS_LOGGED
 import com.example.ycilt.utils.LocationDisplayer
 import com.example.ycilt.utils.Misc
+import com.example.ycilt.utils.Misc.audioToMetadataFilename
 import com.example.ycilt.utils.Misc.displayToast
+import com.example.ycilt.utils.Privacy.PRIVATE_AUDIO
+import com.example.ycilt.utils.Privacy.PUBLIC_AUDIO
+import com.example.ycilt.utils.Privacy.UNKNOWN_PRIVACY
 import com.example.ycilt.utils.toBoolean
 import com.example.ycilt.utils.toInt
-import com.example.ycilt.workers.DeleteSongWorker
+import com.example.ycilt.workers.DeleteAudioWorker
 import com.example.ycilt.workers.EditPrivacyWorker
 import com.example.ycilt.workers.WorkerManager
 import org.json.JSONObject
 import java.io.File
 
-class MySongInfoActivity : AppCompatActivity() {
-
-	private lateinit var songName: String
-	private lateinit var songFile: File
+class MyAudioInfoActivity : AppCompatActivity() {
+	private lateinit var audioName: String
+	private lateinit var audioFile: File
 	private lateinit var metadataFile: File
-	private lateinit var songMetadata: JSONObject
+	private lateinit var audioMetadata: JSONObject
 	private var hiddenStatus: Int = NOT_UPLOADED
-	private var songId: Int = NOT_UPLOADED
+	private var audioId: Int = NOT_UPLOADED
 	private var mediaPlayer: MediaPlayer? = null
 	private lateinit var audioPlayerManager: AudioPlayerManager
 
@@ -48,46 +50,48 @@ class MySongInfoActivity : AppCompatActivity() {
 
 	override fun onCreate(savedInstanceState: Bundle?) {
 		super.onCreate(savedInstanceState)
-		setContentView(R.layout.activity_my_song_info)
+		setContentView(R.layout.activity_my_audio_info)
 
-		songName = intent.getStringExtra("songName")!!
-		songMetadata = JSONObject(intent.getStringExtra("songMetadata")!!)
+		audioName = intent.getStringExtra("audioName")!!
+		audioMetadata = JSONObject(intent.getStringExtra("audioMetadata")!!)
 
-		songFile = File(filesDir, songName)
-		metadataFile = File(filesDir, songName.replace(".mp3", "_metadata.json"))
+		audioFile = File(filesDir, audioName)
+		metadataFile = File(filesDir, audioToMetadataFilename(audioName))
 
-		findViewById<TextView>(R.id.song_info_name).text = songName
+		findViewById<TextView>(R.id.audio_info_name).text = audioName
 		deleteButton = findViewById(R.id.delete_button)
 		privacyButton = findViewById(R.id.privacy_button)
 		showInfoButton = findViewById(R.id.btn_view_info)
 
 
 		val locationInfoView = findViewById<LinearLayout>(R.id.locationInfoView)
-		val latitude = songMetadata.getDouble("latitude")
-		val longitude = songMetadata.getDouble("longitude")
+		val latitude = audioMetadata.getDouble("latitude")
+		val longitude = audioMetadata.getDouble("longitude")
 
 
 		Misc.coordToAddr(this, latitude, longitude) { address ->
 			LocationDisplayer(locationInfoView, latitude, longitude, address)
 		}
 
-		songId = songMetadata.getInt("id")
+		audioId = audioMetadata.getInt("id")
 
-		hiddenStatus = if (songMetadata.has("hidden")) songMetadata.getBoolean("hidden")
-			.toInt() else NOT_UPLOADED
+		Log.d("MyAudioInfoActivity", audioMetadata.toString())
+		hiddenStatus = if (audioMetadata.has("hidden")) audioMetadata.getBoolean("hidden")
+			.toInt() else UNKNOWN_PRIVACY
 
-		deleteButton.setOnClickListener { deleteSong() }
+		deleteButton.setOnClickListener { deleteAudio() }
 
 		privacyButton.setOnClickListener { changePrivacy() }
 
 		showInfoButton.setOnClickListener {
-			val intent = Intent(this, SongInfoActivity::class.java)
-			intent.putExtra("songId", songId)
+			val intent = Intent(this, AudioInfoActivity::class.java)
+			intent.putExtra("audioId", audioId)
+			intent.putExtra("audioFilename", audioName)
 			startActivity(intent)
 		}
 
 		audioPlayerManager = AudioPlayerManager(
-			songFile.absolutePath,
+			audioFile.absolutePath,
 			findViewById(R.id.btnPlay),
 			findViewById(R.id.audio_seekbar),
 			findViewById(R.id.tv_current_time),
@@ -95,32 +99,28 @@ class MySongInfoActivity : AppCompatActivity() {
 		)
 
 
-		audioPlayerManager.updateAudioFilePath(songFile.absolutePath)
+		audioPlayerManager.updateAudioFilePath(audioFile.absolutePath)
 		audioPlayerManager.startListener()
 
 	}
 
 	override fun onResume() {
 		super.onResume()
-		audioPlayerManager.updateAudioFilePath(songFile.absolutePath)
+		audioPlayerManager.updateAudioFilePath(audioFile.absolutePath)
 		audioPlayerManager.startListener()
-		for (button in listOf(deleteButton, privacyButton, showInfoButton)) {
-			button.isEnabled = intent.getBooleanExtra("is_logged_in", false)
+		for (button in listOf(deleteButton, privacyButton)) {
+			button.isEnabled = intent.getBooleanExtra(IS_LOGGED, false)
 		}
-		Log.d("MySongInfoActivity", "Hidden status: $hiddenStatus")
-		Log.d(
-			"MySongInfoActivity",
-			"is_logged_in: ${intent.getBooleanExtra("is_logged_in", false)}"
-		)
-		if (intent.getBooleanExtra("is_logged_in", false)) {
+		if (intent.getBooleanExtra(IS_LOGGED, false)) {
 			updatePrivacyButton()
-			showInfoButton.isEnabled = songId != NOT_UPLOADED
 		}
-		if (hiddenStatus != PUBLIC_SONG) {
-			showInfoButton.isEnabled = false
-		}
-		if (songId == NOT_UPLOADED) {
+
+		if (audioId == NOT_UPLOADED) {
 			privacyButton.isEnabled = false
+		}
+
+		showInfoButton.isEnabled = true
+		if (hiddenStatus != PUBLIC_AUDIO || audioId == NOT_UPLOADED) {
 			showInfoButton.isEnabled = false
 		}
 	}
@@ -128,64 +128,45 @@ class MySongInfoActivity : AppCompatActivity() {
 	private fun updatePrivacyButton() {
 		privacyButton.text =
 			when (hiddenStatus) {
-				PRIVATE_SONG -> getString(R.string.make_public)
-				PUBLIC_SONG -> getString(R.string.make_private)
-				else -> getString(R.string.change_song_s_privacy)
+				PRIVATE_AUDIO -> getString(R.string.make_public)
+				PUBLIC_AUDIO -> getString(R.string.make_private)
+				else -> getString(R.string.change_audio_s_privacy)
 			}
 		privacyButton.isEnabled = hiddenStatus != NOT_UPLOADED
-		showInfoButton.isEnabled = hiddenStatus == PUBLIC_SONG
 	}
 
 
-	private fun scheduleDelete(songId: Int) {
+	private fun scheduleDelete(audioId: Int) {
 		val inputData = Data.Builder()
-			.putInt("songId", songId)
+			.putInt("audioId", audioId)
 			.build()
 
 		val constraints = Constraints.Builder()
 			.setRequiredNetworkType(NetworkType.CONNECTED)
 			.build()
 
-		/*
-				val deleteRequest = OneTimeWorkRequestBuilder<DeleteSongWorker>()
-					.setInputData(inputData)
-					.setConstraints(constraints)
-					.build()
-
-				WorkManager.getInstance(this).enqueue(deleteRequest)
-		*/
-
 		WorkerManager.enqueueWorker(
 			owner = this,
-			workerBuilderType = OneTimeWorkRequestBuilder<DeleteSongWorker>(),
+			workerBuilderType = OneTimeWorkRequestBuilder<DeleteAudioWorker>(),
 			inputData = inputData,
 			constraints = constraints,
 			onSucceeded = {
-				displayToast(this, getString(R.string.song_deleted_successfully))
+				displayToast(this, getString(R.string.audio_deleted_successfully))
 			}
 		)
 
-		/*
-				WorkManager.getInstance(this)
-					.getWorkInfoByIdLiveData(deleteRequest.id)
-					.observe(this) { workInfo ->
-						if (workInfo != null && workInfo.state == WorkInfo.State.SUCCEEDED) {
-							Log.d("MySongInfoActivity", "Song deleted from server")
-						}
-					}
-		*/
 	}
 
-	private fun deleteSong() {
-		if (songFile.exists()) songFile.delete()
+	private fun deleteAudio() {
+		if (audioFile.exists()) audioFile.delete()
 		if (metadataFile.exists()) metadataFile.delete()
-		if (songId != NOT_UPLOADED) {
+		if (audioId != NOT_UPLOADED) {
 			WorkManager.getInstance(this)
-				.cancelAllWorkByTag("upload_song_${songFile.name.hashCode()}")
-			scheduleDelete(songId)
+				.cancelAllWorkByTag("upload_audio_${audioFile.name.hashCode()}")
+			scheduleDelete(audioId)
 		}
 		val intent = Intent().apply {
-			putExtra("deletedSongName", songName)
+			putExtra("deletedAudioName", audioName)
 		}
 		setResult(RESULT_OK, intent)
 		finish()
@@ -193,7 +174,7 @@ class MySongInfoActivity : AppCompatActivity() {
 
 	private fun changePrivacy() {
 		if (hiddenStatus == NOT_UPLOADED) {
-			displayToast(this, getString(R.string.song_not_uploaded))
+			displayToast(this, getString(R.string.audio_not_uploaded))
 			return
 		}
 		/*
@@ -203,7 +184,7 @@ class MySongInfoActivity : AppCompatActivity() {
 		 * */
 		val newPrivacy = if (hiddenStatus.toBoolean()) "show" else "hide"
 		val inputData = Data.Builder()
-			.putInt("songId", songId)
+			.putInt("audioId", audioId)
 			.putString("newPrivacy", newPrivacy)
 			.build()
 		val constraints = Constraints.Builder()
@@ -217,8 +198,8 @@ class MySongInfoActivity : AppCompatActivity() {
 			constraints = constraints,
 			onSucceeded = {
 				hiddenStatus = hiddenStatus.toBoolean().not().toInt()
-				songMetadata.put("hidden", hiddenStatus.toBoolean())
-				metadataFile.writeText(songMetadata.toString())
+				audioMetadata.put("hidden", hiddenStatus.toBoolean())
+				metadataFile.writeText(audioMetadata.toString())
 				updatePrivacyButton()
 			}
 		)

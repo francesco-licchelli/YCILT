@@ -11,9 +11,9 @@
             android:orientation="vertical"
             android:padding="16dp" >
 
-            <!-- Song title-->
+            <!-- Audio title-->
             <TextView
-                android:id="@+id/song_title"
+                android:id="@+id/audio_title"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textSize="18sp"
@@ -28,14 +28,14 @@
                 android:layout_gravity="start" >
 
                 <TextView
-                    android:id="@+id/song_timestamp"
+                    android:id="@+id/audio_timestamp"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginEnd="16dp"
                 />
 
                 <TextView
-                    android:id="@+id/song_duration"
+                    android:id="@+id/audio_duration"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                 />

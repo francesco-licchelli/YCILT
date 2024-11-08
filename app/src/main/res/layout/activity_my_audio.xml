@@ -5,30 +5,30 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <TextView
-        android:id="@+id/loading_songs"
+        android:id="@+id/loading_audio"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/fetching_songs"
+        android:text="@string/fetching_audio"
         android:textSize="18sp"
         android:textStyle="bold"
         android:padding="8dp" />
 
     <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recyclerView_songs"
+        android:id="@+id/recyclerView_audio"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:visibility="gone" />
 
     <TextView
-        android:id="@+id/no_songs_message"
+        android:id="@+id/no_audio_message"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/no_uploaded_songs"
+        android:text="@string/no_uploaded_audio"
         android:textSize="18sp"
         android:textStyle="bold"
         android:padding="5dp"

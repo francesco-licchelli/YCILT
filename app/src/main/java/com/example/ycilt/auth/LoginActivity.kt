@@ -6,8 +6,10 @@ import android.widget.Button
 import android.widget.EditText
 import com.example.ycilt.MainActivity
 import com.example.ycilt.R
-import com.example.ycilt.mysongs.MySongsActivity
-import com.example.ycilt.utils.Constants
+import com.example.ycilt.my_audio.MyAudioActivity
+import com.example.ycilt.utils.Keys.IS_LOGGED
+import com.example.ycilt.utils.Keys.SHARED_PREFS
+import com.example.ycilt.utils.Keys.TOKEN
 import com.example.ycilt.utils.Misc.displayToast
 import com.example.ycilt.workers.WorkerManager
 import kotlinx.coroutines.CoroutineScope
@@ -42,9 +44,9 @@ class LoginActivity : Auther() {
 			finish()
 		}
 
-		findViewById<Button>(R.id.btn_display_songs).setOnClickListener {
-			val intent = Intent(this, MySongsActivity::class.java)
-			intent.putExtra("is_logged_in", false)
+		findViewById<Button>(R.id.btn_display_audio).setOnClickListener {
+			val intent = Intent(this, MyAudioActivity::class.java)
+			intent.putExtra(IS_LOGGED, false)
 			startActivity(intent)
 		}
 	}
@@ -53,9 +55,9 @@ class LoginActivity : Auther() {
 		CoroutineScope(Dispatchers.IO).launch {
 			val callback: (String) -> Unit = { responseBody ->
 				val responseJson = JSONObject(responseBody)
-				val clientSecret = responseJson.getString(Constants.TOKEN)
-				val sharedPreferences = getSharedPreferences(Constants.SHARED_PREFS, MODE_PRIVATE)
-				sharedPreferences.edit().putString(Constants.TOKEN, clientSecret).apply()
+				val clientSecret = responseJson.getString(TOKEN)
+				val sharedPreferences = getSharedPreferences(SHARED_PREFS, MODE_PRIVATE)
+				sharedPreferences.edit().putString(TOKEN, clientSecret).apply()
 				WorkerManager.resumeAll()
 				val intent = Intent(this@LoginActivity, MainActivity::class.java)
 				startActivity(intent)

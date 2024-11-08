@@ -22,7 +22,7 @@
 
         <!-- Author -->
         <TextView
-            android:id="@+id/song_creator"
+            android:id="@+id/audio_creator"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textSize="18sp"
@@ -34,7 +34,7 @@
 
         <!-- BPM -->
         <TextView
-            android:id="@+id/song_bpm"
+            android:id="@+id/audio_bpm"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textSize="18sp"
@@ -42,7 +42,7 @@
 
         <!-- Danceability -->
         <TextView
-            android:id="@+id/song_danceability"
+            android:id="@+id/audio_danceability"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textSize="18sp"
@@ -50,7 +50,7 @@
 
         <!-- Loudness -->
         <TextView
-            android:id="@+id/song_loudness"
+            android:id="@+id/audio_loudness"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textSize="18sp"
@@ -62,11 +62,12 @@
             android:layout_height="wrap_content"
             android:textSize="20sp"
             android:textStyle="bold"
+            android:text="@string/mood"
             android:layout_marginTop="16dp"
             android:layout_marginBottom="8dp"/>
 
         <LinearLayout
-            android:id="@+id/song_mood_container"
+            android:id="@+id/audio_mood_container"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:orientation="vertical">
@@ -80,10 +81,11 @@
             android:textSize="20sp"
             android:textStyle="bold"
             android:layout_marginTop="16dp"
+            android:text="@string/genre"
             android:layout_marginBottom="8dp"/>
 
         <LinearLayout
-            android:id="@+id/song_genre_container"
+            android:id="@+id/audio_genre_container"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:orientation="vertical">
@@ -96,11 +98,12 @@
             android:layout_height="wrap_content"
             android:textSize="20sp"
             android:textStyle="bold"
+            android:text="@string/instruments"
             android:layout_marginTop="16dp"
             android:layout_marginBottom="8dp"/>
 
         <LinearLayout
-            android:id="@+id/song_instruments_container"
+            android:id="@+id/audio_instruments_container"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:orientation="vertical">

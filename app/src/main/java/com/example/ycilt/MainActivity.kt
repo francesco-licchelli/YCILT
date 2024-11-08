@@ -1,6 +1,6 @@
 package com.example.ycilt
 
-import android.Manifest
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.location.Location
@@ -14,21 +14,22 @@ import android.widget.EditText
 import android.widget.ImageButton
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
 import com.example.ycilt.auth.LoginActivity
-import com.example.ycilt.mysongs.AudioRecorderActivity
-import com.example.ycilt.mysongs.MySongsActivity
-import com.example.ycilt.otherssongs.SongInfoActivity
-import com.example.ycilt.utils.Constants
-import com.example.ycilt.utils.Constants.LOCATION_PERMISSION_REQUEST_CODE
+import com.example.ycilt.my_audio.AudioRecorderActivity
+import com.example.ycilt.my_audio.MyAudioActivity
+import com.example.ycilt.others_audio.AudioInfoActivity
+import com.example.ycilt.utils.Constants.DEFAULT_FETCH_AUDIO_DELAY
 import com.example.ycilt.utils.Constants.MAP_VIEW_BUNDLE_KEY
+import com.example.ycilt.utils.Constants.MAX_FETCH_AUDIO_DELAY
+import com.example.ycilt.utils.Keys.IS_LOGGED
+import com.example.ycilt.utils.Keys.SHARED_PREFS
 import com.example.ycilt.utils.Misc
 import com.example.ycilt.utils.Misc.displayToast
 import com.example.ycilt.utils.NetworkUtils.deleteRequest
 import com.example.ycilt.utils.NetworkUtils.getRequest
+import com.example.ycilt.utils.PermissionUtils
 import com.example.ycilt.workers.WorkerManager
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
@@ -37,6 +38,7 @@ import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.MapView
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.material.navigation.NavigationView
 import kotlinx.coroutines.CoroutineScope
@@ -50,23 +52,28 @@ import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
 import java.net.HttpURLConnection
+import kotlin.math.max
 
 class MainActivity : AppCompatActivity(), OnMapReadyCallback {
-
 	private lateinit var mapView: MapView
 	private lateinit var fusedLocationClient: FusedLocationProviderClient
 	private lateinit var googleMap: GoogleMap
 	private var recordIButton: ImageButton? = null
 	private var userLocation: LatLng? = null
-	private var loadSongsJob: Job? = null
-	private var fetchSongDelay: Long = Constants.DEFAULT_FETCH_SONG_DELAY
+	private var loadAudioJob: Job? = null
+	private var fetchAudioDelay: Long = DEFAULT_FETCH_AUDIO_DELAY
+	private var markers: HashMap<Int, Marker> = HashMap()
+	/*
+	* TODO
+	*  - Rimuovere pulsante sopra la ricerca di indirizzo
+	* */
 
 	override fun onCreate(savedInstanceState: Bundle?) {
 		super.onCreate(savedInstanceState)
 		setContentView(R.layout.activity_main)
 		WorkerManager.initialize(this)
 
-		if (getSharedPreferences(Constants.SHARED_PREFS, MODE_PRIVATE).getString(
+		if (getSharedPreferences(SHARED_PREFS, MODE_PRIVATE).getString(
 				"client_secret",
 				null
 			) == null
@@ -91,22 +98,34 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
 		val drawerLayout = findViewById<DrawerLayout>(R.id.drawer_layout)
 
 		findViewById<ImageButton>(R.id.btn_resync_gps).setOnClickListener {
-			userLocation?.let { _ ->
-				getUserLocationAndUpdateMap()
-			} ?: run {
-				displayToast(this, getString(R.string.cant_resync))
+			if (!PermissionUtils.hasLocationPermission((this))) {
+				PermissionUtils.requestLocationPermission(this)
+				displayToast(this, getString(R.string.gps_permission_needed)) //TODO edit string
+				return@setOnClickListener
 			}
+			if (!PermissionUtils.isLocationEnabled(this)) {
+				displayToast(this, getString(R.string.activate_gps))
+				return@setOnClickListener
+			}
+			getUserLocationAndUpdateMap()
 		}
 
 		findViewById<ImageButton>(R.id.btn_record_audio).setOnClickListener {
+			if (!PermissionUtils.hasLocationPermission((this))) {
+				PermissionUtils.requestLocationPermission(this)
+				displayToast(this, getString(R.string.gps_permission_needed))
+				return@setOnClickListener
+			}
+			if (!PermissionUtils.isLocationEnabled(this)) {
+				displayToast(this, getString(R.string.activate_gps))
+				return@setOnClickListener
+			}
 			userLocation?.let { location ->
 				val intent = Intent(this, AudioRecorderActivity::class.java).apply {
 					putExtra("latitude", location.latitude)
 					putExtra("longitude", location.longitude)
 				}
 				startActivity(intent)
-			} ?: run {
-				displayToast(this, getString(R.string.cant_record))
 			}
 		}
 
@@ -118,8 +137,18 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
 		}
 
 		findViewById<EditText>(R.id.searchAddress).setOnEditorActionListener { v, actionId, event ->
+			if (!PermissionUtils.hasInternetPermission(this)) {
+				PermissionUtils.requestInternetPermission(this)
+				displayToast(this, getString(R.string.internet_permission_needed))
+				return@setOnEditorActionListener false
+			}
+			if (!PermissionUtils.isInternetEnabled(this)) {
+				displayToast(this, getString(R.string.activate_internet))
+				return@setOnEditorActionListener false
+			}
 			if (actionId == EditorInfo.IME_ACTION_DONE ||
-				(event != null && event.keyCode == KeyEvent.KEYCODE_ENTER && event.action == KeyEvent.ACTION_DOWN)
+				(event != null && event.keyCode == KeyEvent.KEYCODE_ENTER
+						&& event.action == KeyEvent.ACTION_DOWN)
 			) {
 				CoroutineScope(Dispatchers.Main).launch {
 					if (showLocation(v.text.toString())) {
@@ -136,6 +165,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
 		findViewById<NavigationView>(R.id.navigation_view).setNavigationItemSelectedListener { menuItem ->
 			when (menuItem.itemId) {
 				R.id.drawer_logout -> {
+					getSharedPreferences(SHARED_PREFS, MODE_PRIVATE).edit().clear().apply()
 					val intent = Intent(this, LoginActivity::class.java)
 					intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
 					startActivity(intent)
@@ -168,9 +198,9 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
 					}
 				}
 
-				R.id.drawer_my_songs -> {
-					val intent = Intent(this, MySongsActivity::class.java)
-					intent.putExtra("is_logged_in", true)
+				R.id.drawer_my_audio -> {
+					val intent = Intent(this, MyAudioActivity::class.java)
+					intent.putExtra(IS_LOGGED, true)
 					startActivity(intent)
 				}
 			}
@@ -194,21 +224,26 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
 			}
 		})
 
-		checkLocationPermission()
+		if (!PermissionUtils.hasInternetPermission(this)) {
+			PermissionUtils.requestInternetPermission(this)
+		}
+		if (!PermissionUtils.hasLocationPermission(this)) {
+			PermissionUtils.requestLocationPermission(this)
+		}
+		getUserLocationAndUpdateMap()
 	}
 
 	override fun onResume() {
 		super.onResume()
 		mapView.onResume()
+		markers = HashMap()
 		getUserLocationAndUpdateMap()
-
-		//TODO if token invalid, then go to login activity
-
 		if (::googleMap.isInitialized) {
-			loadSongsJob = CoroutineScope(Dispatchers.Main).launch {
+			googleMap.clear()
+			loadAudioJob = CoroutineScope(Dispatchers.Main).launch {
 				while (isActive) {
-					loadSongs()
-					delay(fetchSongDelay)
+					loadAudio()
+					delay(fetchAudioDelay)
 				}
 			}
 		} else {
@@ -219,27 +254,12 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
 	override fun onPause() {
 		super.onPause()
 		mapView.onPause()
-		loadSongsJob?.cancel() // Ferma la routine se la coroutine è attiva
+		loadAudioJob?.cancel() // Ferma la routine se la coroutine è attiva
 	}
 
 	override fun onDestroy() {
 		super.onDestroy()
 		mapView.onDestroy()
-	}
-
-	override fun onRequestPermissionsResult(
-		requestCode: Int,
-		permissions: Array<out String>,
-		grantResults: IntArray
-	) {
-		super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-		if (requestCode == LOCATION_PERMISSION_REQUEST_CODE) {
-			if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-				getUserLocationAndUpdateMap()
-			} else {
-				recordIButton?.isEnabled = false
-			}
-		}
 	}
 
 	override fun onSaveInstanceState(outState: Bundle) {
@@ -254,15 +274,8 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
 		mapView.onSaveInstanceState(mapViewBundle)
 	}
 
-	@Deprecated("Deprecated in Java")
-	override fun onLowMemory() {
-		super.onLowMemory()
-		mapView.onLowMemory()
-	}
-
-
-	private fun incrementFetchSongDelay() {
-		fetchSongDelay = (fetchSongDelay * 1.5).toLong()
+	private fun incrementFetchAudioDelay() {
+		fetchAudioDelay = max((fetchAudioDelay * 1.5).toLong(), MAX_FETCH_AUDIO_DELAY)
 	}
 
 	private fun getApiKeyFromManifest(): String? {
@@ -284,7 +297,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
 
 			if (result == null) {
 				withContext(Dispatchers.Main) {
-					displayToast(this@MainActivity, "Error while resolving the address")
+					displayToast(this@MainActivity, getString(R.string.cant_resolve_address))
 				}
 				return@withContext false
 			}
@@ -299,8 +312,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
 		}
 	}
 
-	private fun loadSongs() {
-		googleMap.clear()
+	private fun loadAudio() {
 		CoroutineScope(Dispatchers.IO).launch {
 			val (responseCode, responseBody) = getRequest(
 				endpoint = "audio/all",
@@ -311,39 +323,57 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
 				runOnUiThread { Misc.displayError(this@MainActivity, responseBody) }
 				val intent = Intent(this@MainActivity, LoginActivity::class.java)
 				intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-				incrementFetchSongDelay()
+				incrementFetchAudioDelay()
 				startActivity(intent)
 				finish()
 			}
 			try {
-				val songs = JSONArray(responseBody)
-				fetchSongDelay = Constants.DEFAULT_FETCH_SONG_DELAY
-				for (i in 0 until songs.length()) {
-					val songJson = songs.getJSONObject(i)
-					runOnUiThread {
-						val marker = this@MainActivity.googleMap.addMarker(
-							MarkerOptions().position(
-								LatLng(
-									songJson.getDouble("latitude"),
-									songJson.getDouble("longitude")
+				val audio = JSONArray(responseBody)
+				val remoteIds: Array<Int> =
+					Array(audio.length()) { index -> audio.getJSONObject(index).getInt("id") }
+
+				fetchAudioDelay = DEFAULT_FETCH_AUDIO_DELAY
+				for (i in 0 until audio.length()) {
+					val audioJson = audio.getJSONObject(i)
+					if (!markers.containsKey(audioJson.getInt("id"))) {
+						runOnUiThread {
+							val marker = googleMap.addMarker(
+								MarkerOptions().position(
+									LatLng(
+										audioJson.getDouble("latitude"),
+										audioJson.getDouble("longitude")
+									)
 								)
-							)
-						)
-						marker?.tag = songJson.getInt("id")
+							)!!
+							marker.tag = audioJson.getInt("id")
+							markers[audioJson.getInt("id")] = marker
+						}
 					}
 				}
+
+				val keysToRemove = markers.filter { !remoteIds.contains(it.key) }.map { it.key }
+
+				keysToRemove.forEach {
+					runOnUiThread {
+						markers[it]?.remove()
+					}
+					markers.remove(it)
+				}
+
 			} catch (e: JSONException) {
 				runOnUiThread {
-					incrementFetchSongDelay()
-					Log.d("MainActivity", "Failed to load songs: $responseCode")
-					displayToast(this@MainActivity, "Failed to load songs: error $responseCode")
+					incrementFetchAudioDelay()
+					displayToast(
+						this@MainActivity,
+						getString(R.string.failed_to_load_audio_error, responseCode)
+					)
 				}
 			}
 		}
 		googleMap.setOnMarkerClickListener { marker ->
-			val songId = marker.tag as Int
-			val intent = Intent(this@MainActivity, SongInfoActivity::class.java).apply {
-				putExtra("songId", songId)
+			val audioId = marker.tag as Int
+			val intent = Intent(this@MainActivity, AudioInfoActivity::class.java).apply {
+				putExtra("audioId", audioId)
 			}
 			startActivity(intent)
 			true
@@ -353,13 +383,12 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
 	override fun onMapReady(googleMap: GoogleMap) {
 		this.googleMap = googleMap
 		getUserLocationAndUpdateMap()
-		loadSongs()
+		loadAudio()
 	}
 
+	@SuppressLint("MissingPermission")
 	private fun getUserLocationAndUpdateMap() {
-		if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
-			== PackageManager.PERMISSION_GRANTED
-		) {
+		if (PermissionUtils.hasLocationPermission(this)) {
 			fusedLocationClient.lastLocation.addOnSuccessListener { location: Location? ->
 				location?.let {
 					userLocation = LatLng(it.latitude, it.longitude)
@@ -368,36 +397,6 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
 					recordIButton?.isEnabled = true
 				}
 			}
-		}
-	}
-
-	private fun checkLocationPermission() {
-		val fineLocationPermissionCheck = ContextCompat.checkSelfPermission(
-			this, Manifest.permission.ACCESS_FINE_LOCATION
-		)
-		val coarseLocationPermissionCheck = ContextCompat.checkSelfPermission(
-			this,
-			Manifest.permission.ACCESS_COARSE_LOCATION
-		)
-
-		if (fineLocationPermissionCheck != PackageManager.PERMISSION_GRANTED ||
-			coarseLocationPermissionCheck != PackageManager.PERMISSION_GRANTED
-		) {
-			val permissionsToRequest = mutableListOf<String>()
-			if (fineLocationPermissionCheck != PackageManager.PERMISSION_GRANTED) {
-				permissionsToRequest.add(Manifest.permission.ACCESS_FINE_LOCATION)
-			}
-			if (coarseLocationPermissionCheck != PackageManager.PERMISSION_GRANTED) {
-				permissionsToRequest.add(Manifest.permission.ACCESS_COARSE_LOCATION)
-			}
-
-			ActivityCompat.requestPermissions(
-				this,
-				permissionsToRequest.toTypedArray(),
-				LOCATION_PERMISSION_REQUEST_CODE
-			)
-		} else {
-			getUserLocationAndUpdateMap()
 		}
 	}
 

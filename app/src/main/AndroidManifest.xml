@@ -3,6 +3,7 @@
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
         android:icon="@mipmap/ic_logo"
@@ -22,10 +23,10 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".mysongs.AudioRecorderActivity" />
-        <activity android:name=".mysongs.MySongInfoActivity" />
-        <activity android:name=".mysongs.MySongsActivity" />
-        <activity android:name=".otherssongs.SongInfoActivity" />
+        <activity android:name=".my_audio.AudioRecorderActivity" />
+        <activity android:name=".my_audio.MyAudioInfoActivity" />
+        <activity android:name=".my_audio.MyAudioActivity" />
+        <activity android:name=".others_audio.AudioInfoActivity" />
         <activity android:name="com.example.ycilt.auth.LoginActivity" />
         <activity android:name="com.example.ycilt.auth.RegisterActivity" />
     </application>
