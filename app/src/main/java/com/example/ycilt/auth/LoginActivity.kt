@@ -2,15 +2,16 @@ package com.example.ycilt.auth
 
 import android.content.Intent
 import android.os.Bundle
-import android.widget.Button
-import android.widget.EditText
+import androidx.activity.compose.setContent
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import com.example.ycilt.MainActivity
-import com.example.ycilt.R
 import com.example.ycilt.my_audio.MyAudioActivity
 import com.example.ycilt.utils.Keys.IS_LOGGED
 import com.example.ycilt.utils.Keys.SHARED_PREFS
 import com.example.ycilt.utils.Keys.TOKEN
-import com.example.ycilt.utils.Misc.displayToast
+import com.example.ycilt.utils.ToastManager.disableToasts
+import com.example.ycilt.utils.ToastManager.enableToasts
 import com.example.ycilt.workers.WorkerManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -18,40 +19,36 @@ import kotlinx.coroutines.launch
 import org.json.JSONObject
 
 class LoginActivity : Auther() {
+	companion object {
+		private var firstLogin: Boolean = true
+	}
 
 	override fun onCreate(savedInstanceState: Bundle?) {
 		super.onCreate(savedInstanceState)
-		setContentView(R.layout.activity_login)
-
-		val usernameEditText = findViewById<EditText>(R.id.username)
-		val passwordEditText = findViewById<EditText>(R.id.password)
-
-		findViewById<Button>(R.id.btn_login).setOnClickListener {
-			val username = usernameEditText.text.toString()
-			val password = passwordEditText.text.toString()
-
-			if (username.isEmpty())
-				displayToast(this, getString(R.string.missing_username))
-			else if (password.isEmpty())
-				displayToast(this, getString(R.string.missing_password))
-			else
-				performLogin(username, password)
+		setContent {
+			MaterialTheme {
+				Surface {
+					LoginScreen(
+						onLoginClick = { username, password -> performLogin(username, password) },
+						onSignupClick = { navigateToSignup() },
+						onDisplayAudioClick = { navigateToMyAudio() }
+					)
+				}
+			}
 		}
 
-		findViewById<Button>(R.id.btn_login_to_reg).setOnClickListener {
-			val intent = Intent(this, RegisterActivity::class.java)
-			startActivity(intent)
-			finish()
-		}
+	}
 
-		findViewById<Button>(R.id.btn_display_audio).setOnClickListener {
-			val intent = Intent(this, MyAudioActivity::class.java)
-			intent.putExtra(IS_LOGGED, false)
-			startActivity(intent)
+	override fun onStart() {
+		super.onStart()
+		if (!firstLogin) {
+			disableToasts()
 		}
 	}
 
 	private fun performLogin(username: String, password: String) {
+		firstLogin = false
+		enableToasts()
 		CoroutineScope(Dispatchers.IO).launch {
 			val callback: (String) -> Unit = { responseBody ->
 				val responseJson = JSONObject(responseBody)
@@ -59,14 +56,21 @@ class LoginActivity : Auther() {
 				val sharedPreferences = getSharedPreferences(SHARED_PREFS, MODE_PRIVATE)
 				sharedPreferences.edit().putString(TOKEN, clientSecret).apply()
 				WorkerManager.resumeAll()
-				val intent = Intent(this@LoginActivity, MainActivity::class.java)
-				startActivity(intent)
+				startActivity(Intent(this@LoginActivity, MainActivity::class.java))
 				finish()
-
 			}
 			super.perform(username, password, callback)
 		}
 	}
 
+	private fun navigateToSignup() {
+		startActivity(Intent(this, SignupActivity::class.java))
+		finish()
+	}
 
+	private fun navigateToMyAudio() {
+		val intent = Intent(this, MyAudioActivity::class.java)
+		intent.putExtra(IS_LOGGED, false)
+		startActivity(intent)
+	}
 }

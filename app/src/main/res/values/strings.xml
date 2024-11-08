@@ -1,12 +1,12 @@
 <resources>
     <string name="app_name">YCILT</string>
-    <string name="address">Indirizzo</string>
+    <string name="address">Address</string>
     <string name="password">Password</string>
-    <string name="login">Login</string>
-    <string name="already_have_an_account_login">Already have an account? Login</string>
+    <string name="login">Log in</string>
+    <string name="already_have_an_account_login">Already have an account? Log in</string>
     <string name="username">Username</string>
-    <string name="register">Register</string>
-    <string name="don_t_have_an_account_register">Don\'t have an account? Register</string>
+    <string name="signup">Signup</string>
+    <string name="don_t_have_an_account_signup">Don\'t have an account? Sign up</string>
     <string name="title_1">YOUR CITY</string>
     <string name="title_2">IS</string>
     <string name="title_3">LISTENING TO</string>

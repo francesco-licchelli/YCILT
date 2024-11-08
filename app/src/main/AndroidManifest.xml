@@ -28,6 +28,6 @@
         <activity android:name=".my_audio.MyAudioActivity" />
         <activity android:name=".others_audio.AudioInfoActivity" />
         <activity android:name="com.example.ycilt.auth.LoginActivity" />
-        <activity android:name="com.example.ycilt.auth.RegisterActivity" />
+        <activity android:name="com.example.ycilt.auth.SignupActivity" />
     </application>
 </manifest>

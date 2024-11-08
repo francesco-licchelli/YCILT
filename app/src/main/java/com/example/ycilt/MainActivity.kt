@@ -7,7 +7,6 @@ import android.location.Location
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.util.Log
 import android.view.KeyEvent
 import android.view.inputmethod.EditorInfo
 import android.widget.EditText
@@ -26,10 +25,10 @@ import com.example.ycilt.utils.Constants.MAX_FETCH_AUDIO_DELAY
 import com.example.ycilt.utils.Keys.IS_LOGGED
 import com.example.ycilt.utils.Keys.SHARED_PREFS
 import com.example.ycilt.utils.Misc
-import com.example.ycilt.utils.Misc.displayToast
 import com.example.ycilt.utils.NetworkUtils.deleteRequest
 import com.example.ycilt.utils.NetworkUtils.getRequest
 import com.example.ycilt.utils.PermissionUtils
+import com.example.ycilt.utils.ToastManager.displayToast
 import com.example.ycilt.workers.WorkerManager
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices

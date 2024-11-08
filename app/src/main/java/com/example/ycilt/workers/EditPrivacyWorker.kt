@@ -6,7 +6,6 @@ import android.os.Looper
 import androidx.work.Data
 import androidx.work.WorkerParameters
 import com.example.ycilt.utils.Constants.NOT_UPLOADED
-import com.example.ycilt.utils.Misc.displayToast
 import com.example.ycilt.utils.NetworkUtils.getRequest
 import kotlinx.coroutines.runBlocking
 import org.json.JSONObject

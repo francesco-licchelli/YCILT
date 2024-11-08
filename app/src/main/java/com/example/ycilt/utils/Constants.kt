@@ -8,6 +8,7 @@ import android.util.Log
 import android.widget.Toast
 import com.example.ycilt.others_audio.Category
 import com.example.ycilt.utils.NetworkUtils.getRequest
+import com.example.ycilt.utils.ToastManager.displayToast
 import com.example.ycilt.utils.Urls.ADDR_TO_COORD_API
 import org.json.JSONException
 import org.json.JSONObject
@@ -135,23 +136,6 @@ object Misc {
 				message
 			}
 		)
-	}
-
-
-	val activeToasts = mutableListOf<Toast>()
-	fun displayToast(context: Context, message: String) {
-		activeToasts.forEach { it.cancel() }
-		activeToasts.clear()
-
-		val toast = Toast.makeText(context, message, Toast.LENGTH_SHORT)
-		toast.show()
-
-		activeToasts.add(toast)
-		toast.addCallback(object : Toast.Callback() {
-			override fun onToastHidden() {
-				activeToasts.remove(toast)
-			}
-		})
 	}
 
 	fun audioToMetadataFilename(audioFilename: String): String {

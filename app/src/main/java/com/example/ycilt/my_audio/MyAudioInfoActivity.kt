@@ -21,10 +21,10 @@ import com.example.ycilt.utils.Keys.IS_LOGGED
 import com.example.ycilt.utils.LocationDisplayer
 import com.example.ycilt.utils.Misc
 import com.example.ycilt.utils.Misc.audioToMetadataFilename
-import com.example.ycilt.utils.Misc.displayToast
 import com.example.ycilt.utils.Privacy.PRIVATE_AUDIO
 import com.example.ycilt.utils.Privacy.PUBLIC_AUDIO
 import com.example.ycilt.utils.Privacy.UNKNOWN_PRIVACY
+import com.example.ycilt.utils.ToastManager.displayToast
 import com.example.ycilt.utils.toBoolean
 import com.example.ycilt.utils.toInt
 import com.example.ycilt.workers.DeleteAudioWorker
