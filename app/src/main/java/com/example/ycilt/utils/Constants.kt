@@ -5,7 +5,6 @@ import android.location.Geocoder
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
-import android.widget.Toast
 import com.example.ycilt.others_audio.Category
 import com.example.ycilt.utils.NetworkUtils.getRequest
 import com.example.ycilt.utils.ToastManager.displayToast
@@ -151,8 +150,5 @@ object Misc {
 		return audioFilename.replace(".mp3", "_metadata.json")
 	}
 
-	fun metadataToAudioFilename(metadataFilename: String): String {
-		return metadataFilename.replace("_metadata.json", ".mp3")
-	}
 
 }
