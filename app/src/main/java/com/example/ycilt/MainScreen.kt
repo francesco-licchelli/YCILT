@@ -81,23 +81,27 @@ fun MainScreen(
 		position = CameraPosition.fromLatLngZoom(LatLng(45.0, 12.0), 15f)
 	}
 
+	fun updateMarkers(audios: JSONArray) {
+		markerStates.removeAll { (_, id) ->
+			audios.toList().none { it.getInt("id") == id }
+		}
+		audios.toList().filter { newLocation ->
+			markerStates.none { (_, id) -> id == newLocation.getInt("id") }
+		}.forEach { newLocation ->
+			val lat = newLocation.getDouble("latitude")
+			val lng = newLocation.getDouble("longitude")
+			val id = newLocation.getInt("id")
+			markerStates.add(MarkerState(position = LatLng(lat, lng)) to id)
+		}
+
+	}
+
 	LaunchedEffect(Unit) {
 		while (true) {
-			val newLocations = fetchAudios()
-
-			markerStates.removeAll { (_, id) ->
-				newLocations.toList().none { it.getInt("id") == id }
+			withContext(Dispatchers.IO) {
+				updateMarkers(fetchAudios())
+				delay(FETCH_AUDIO_INTERVAL)
 			}
-			newLocations.toList().filter { newLocation ->
-				markerStates.none { (_, id) -> id == newLocation.getInt("id") }
-			}.forEach { newLocation ->
-				val lat = newLocation.getDouble("latitude")
-				val lng = newLocation.getDouble("longitude")
-				val id = newLocation.getInt("id")
-				markerStates.add(MarkerState(position = LatLng(lat, lng)) to id)
-			}
-
-			delay(FETCH_AUDIO_INTERVAL)
 		}
 	}
 
@@ -184,6 +188,11 @@ fun MainScreen(
 						modifier = Modifier.fillMaxSize(),
 						properties = MapProperties(isMyLocationEnabled = true),
 						uiSettings = MapUiSettings(zoomControlsEnabled = false),
+						onMapLoaded = {
+							CoroutineScope(Dispatchers.IO).launch {
+								updateMarkers(fetchAudios())
+							}
+						}
 					) {
 						markerStates.forEach { (state, id) ->
 							Marker(
