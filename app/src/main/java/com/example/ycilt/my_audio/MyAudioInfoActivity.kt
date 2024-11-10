@@ -3,11 +3,10 @@ package com.example.ycilt.my_audio
 import android.content.Intent
 import android.media.MediaPlayer
 import android.os.Bundle
-import android.util.Log
-import android.widget.Button
-import android.widget.LinearLayout
-import android.widget.TextView
+import androidx.activity.compose.setContent
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.runtime.MutableIntState
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.work.Constraints
 import androidx.work.Data
 import androidx.work.NetworkType
@@ -15,14 +14,9 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import com.example.ycilt.R
 import com.example.ycilt.others_audio.AudioInfoActivity
-import com.example.ycilt.utils.AudioPlayerManager
 import com.example.ycilt.utils.Constants.NOT_UPLOADED
 import com.example.ycilt.utils.Keys.IS_LOGGED
-import com.example.ycilt.utils.LocationDisplayer
-import com.example.ycilt.utils.Misc
 import com.example.ycilt.utils.Misc.audioToMetadataFilename
-import com.example.ycilt.utils.Privacy.PRIVATE_AUDIO
-import com.example.ycilt.utils.Privacy.PUBLIC_AUDIO
 import com.example.ycilt.utils.Privacy.UNKNOWN_PRIVACY
 import com.example.ycilt.utils.ToastManager.displayToast
 import com.example.ycilt.utils.toBoolean
@@ -33,7 +27,7 @@ import com.example.ycilt.workers.WorkerManager
 import org.json.JSONObject
 import java.io.File
 
-class MyAudioInfoActivity : AppCompatActivity() {
+/*class MyAudioInfoActivity : AppCompatActivity() {
 	private lateinit var audioName: String
 	private lateinit var audioFile: File
 	private lateinit var metadataFile: File
@@ -41,7 +35,7 @@ class MyAudioInfoActivity : AppCompatActivity() {
 	private var hiddenStatus: Int = NOT_UPLOADED
 	private var audioId: Int = NOT_UPLOADED
 	private var mediaPlayer: MediaPlayer? = null
-	private lateinit var audioPlayerManager: AudioPlayerManager
+//	private lateinit var audioPlayerManager: AudioPlayerManager
 
 	private lateinit var privacyButton: Button
 	private lateinit var deleteButton: Button
@@ -90,24 +84,11 @@ class MyAudioInfoActivity : AppCompatActivity() {
 			startActivity(intent)
 		}
 
-		audioPlayerManager = AudioPlayerManager(
-			audioFile.absolutePath,
-			findViewById(R.id.btnPlay),
-			findViewById(R.id.audio_seekbar),
-			findViewById(R.id.tv_current_time),
-			findViewById(R.id.tv_total_time)
-		)
-
-
-		audioPlayerManager.updateAudioFilePath(audioFile.absolutePath)
-		audioPlayerManager.startListener()
 
 	}
 
 	override fun onResume() {
 		super.onResume()
-		audioPlayerManager.updateAudioFilePath(audioFile.absolutePath)
-		audioPlayerManager.startListener()
 		for (button in listOf(deleteButton, privacyButton)) {
 			button.isEnabled = intent.getBooleanExtra(IS_LOGGED, false)
 		}
@@ -177,11 +158,11 @@ class MyAudioInfoActivity : AppCompatActivity() {
 			displayToast(this, getString(R.string.audio_not_uploaded))
 			return
 		}
-		/*
+		*//*
 		 * se hiddenstatus e'
 		 * 0 -> il brano e' pubblico, quindi lo rendo nascosto, chiamo hide
 		 * 1 -> il brano e' nascosto, quindi lo rendo pubblico, chiamo show
-		 * */
+		 * *//*
 		val newPrivacy = if (hiddenStatus.toBoolean()) "show" else "hide"
 		val inputData = Data.Builder()
 			.putInt("audioId", audioId)
@@ -207,7 +188,123 @@ class MyAudioInfoActivity : AppCompatActivity() {
 
 	override fun onDestroy() {
 		super.onDestroy()
-		audioPlayerManager.release()
 		mediaPlayer?.release()
+	}
+}*/
+
+class MyAudioInfoActivity : AppCompatActivity() {
+	private lateinit var audioName: String
+	private lateinit var audioFile: File
+	private lateinit var metadataFile: File
+	private lateinit var audioMetadata: JSONObject
+
+	private var hiddenStatus: MutableIntState = mutableIntStateOf(NOT_UPLOADED)
+	private var audioId: Int = NOT_UPLOADED
+
+	override fun onCreate(savedInstanceState: Bundle?) {
+		super.onCreate(savedInstanceState)
+
+		audioName = intent.getStringExtra("audioName")!!
+		audioMetadata = JSONObject(intent.getStringExtra("audioMetadata")!!)
+
+		audioFile = File(filesDir, audioName)
+		metadataFile = File(filesDir, audioToMetadataFilename(audioName))
+
+		audioId = audioMetadata.getInt("id")
+
+		hiddenStatus.intValue = if (audioMetadata.has("hidden")) audioMetadata.getBoolean("hidden")
+			.toInt() else UNKNOWN_PRIVACY
+
+		setContent {
+			MyAudioInfoScreen(
+				hiddenStatus = hiddenStatus,
+				audioFilename = intent.getStringExtra("audioName") ?: "",
+				audioMetadata = JSONObject(intent.getStringExtra("audioMetadata") ?: ""),
+				onDeleteAudio = { deleteAudio() },
+				onChangePrivacy = { changePrivacy() },
+				onShowInfo = { showAudioInfo() },
+				//TODO prendere i valori reali
+				canDeleteAudio = intent.getBooleanExtra(IS_LOGGED, false),
+				canChangePrivacy = intent.getBooleanExtra(IS_LOGGED, false),
+				canShowInfo = true
+			)
+		}
+	}
+
+
+	private fun scheduleDelete(audioId: Int) {
+		val inputData = Data.Builder()
+			.putInt("audioId", audioId)
+			.build()
+
+		val constraints = Constraints.Builder()
+			.setRequiredNetworkType(NetworkType.CONNECTED)
+			.build()
+
+		WorkerManager.enqueueWorker(
+			owner = this,
+			workerBuilderType = OneTimeWorkRequestBuilder<DeleteAudioWorker>(),
+			inputData = inputData,
+			constraints = constraints,
+			onSucceeded = {
+				displayToast(this, getString(R.string.audio_deleted_successfully))
+			}
+		)
+
+	}
+
+	private fun deleteAudio() {
+		if (audioFile.exists()) audioFile.delete()
+		if (metadataFile.exists()) metadataFile.delete()
+		if (audioId != NOT_UPLOADED) {
+			WorkManager.getInstance(this)
+				.cancelAllWorkByTag("upload_audio_${audioFile.name.hashCode()}")
+			scheduleDelete(audioId)
+		}
+		val intent = Intent().apply {
+			putExtra("deletedAudioName", audioName)
+		}
+		setResult(RESULT_OK, intent)
+		finish()
+	}
+
+
+	private fun changePrivacy() {
+		if (hiddenStatus.intValue == NOT_UPLOADED) {
+			displayToast(this, getString(R.string.audio_not_uploaded))
+			return
+		}
+		/*
+		 * se hiddenstatus e'
+		 * 0 -> il brano e' pubblico, quindi lo rendo nascosto, chiamo hide
+		 * 1 -> il brano e' nascosto, quindi lo rendo pubblico, chiamo show
+		 * */
+		val newPrivacy = if (hiddenStatus.intValue.toBoolean()) "show" else "hide"
+		val inputData = Data.Builder()
+			.putInt("audioId", audioId)
+			.putString("newPrivacy", newPrivacy)
+			.build()
+		val constraints = Constraints.Builder()
+			.setRequiredNetworkType(NetworkType.CONNECTED)
+			.build()
+
+		WorkerManager.enqueueWorker(
+			owner = this,
+			workerBuilderType = OneTimeWorkRequestBuilder<EditPrivacyWorker>(),
+			inputData = inputData,
+			constraints = constraints,
+			onSucceeded = {
+				hiddenStatus.intValue = hiddenStatus.intValue.toBoolean().not().toInt()
+				audioMetadata.put("hidden", hiddenStatus.intValue.toBoolean())
+				metadataFile.writeText(audioMetadata.toString())
+			}
+		)
+	}
+
+	private fun showAudioInfo() {
+		Intent(this, AudioInfoActivity::class.java).apply {
+			putExtra("audioId", audioId)
+			putExtra("audioFilename", audioName)
+		}.also { startActivity(it) }
 	}
 }

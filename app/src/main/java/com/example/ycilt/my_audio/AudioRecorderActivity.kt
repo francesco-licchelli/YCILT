@@ -2,12 +2,11 @@ package com.example.ycilt.my_audio
 
 import android.media.MediaRecorder
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.util.Log
-import android.widget.Button
-import android.widget.ImageButton
+import androidx.activity.compose.setContent
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.mutableStateOf
 import androidx.work.Constraints.Builder
 import androidx.work.Data
 import androidx.work.NetworkType
@@ -17,7 +16,6 @@ import androidx.work.WorkManager
 import com.arthenica.mobileffmpeg.FFmpeg
 import com.example.ycilt.R
 import com.example.ycilt.utils.AudioInfoSaver.updateMetadataFromBackend
-import com.example.ycilt.utils.AudioPlayerManager
 import com.example.ycilt.utils.Constants.MAX_FILE_SIZE
 import com.example.ycilt.utils.Constants.NOT_UPLOADED
 import com.example.ycilt.utils.Misc.audioToMetadataFilename
@@ -42,106 +40,49 @@ import kotlin.coroutines.suspendCoroutine
 
 class AudioRecorderActivity : AppCompatActivity() {
 	private var mediaRecorder: MediaRecorder? = null
-	private var aacFilename: String = ""
+	private var aacFilename: MutableState<String> = mutableStateOf("")
 	private var latestTimestamp: String? = null
 	private var enqueuedAudio: Int = 0
 
-	private lateinit var btnRecord: Button
-	private lateinit var btnStopRecord: Button
-	private lateinit var btnSave: Button
-
-	private lateinit var audioPlayerManager: AudioPlayerManager
 
 	override fun onCreate(savedInstanceState: Bundle?) {
 		super.onCreate(savedInstanceState)
-		setContentView(R.layout.activity_audio_recorder)
+		setContent {
+			AudioRecorderScreen(
+				startRecording = { afterRecordingStarted ->
+					startRecording(afterRecordingStarted)
+					Log.d("AudioRecorder", "File path 1: $aacFilename")
+				},
+				stopRecording = {
+					stopRecording()
+					Log.d("AudioRecorder", "File path 2: $aacFilename")
+				},
+				audioFilename = aacFilename,
+				saveRecording = { saveRecording() },
+			)
+		}
 
 		if (!PermissionUtils.hasRecordPermission(this)) {
 			PermissionUtils.requestRecordPermission(this)
 		}
-
-		val btnBack: ImageButton = findViewById(R.id.btnBack)
-		btnRecord = findViewById(R.id.btnRecord)
-		btnStopRecord = findViewById(R.id.btnStopRecord)
-		btnSave = findViewById(R.id.btnSave)
-
-		btnBack.setOnClickListener {
-			if (mediaRecorder != null) {
-				mediaRecorder?.release()
-				mediaRecorder = null
-				if (File(aacFilename).exists()) {
-					File(aacFilename).delete()
-				}
-			}
-			finish()
-		}
-
-		btnRecord.setOnClickListener {
-			displayToast(this, getString(R.string.starting_recording))
-			startRecording {
-				btnRecord.isEnabled = false
-				btnSave.isEnabled = false
-				audioPlayerManager.updateStates(false)
-				displayToast(this, getString(R.string.recording_started))
-				Handler(Looper.getMainLooper()).postDelayed({
-					btnStopRecord.isEnabled = true
-				}, 2000)
-			}
-			/*
-			* Il backend sembra rifiutare file audio dalla durata minore di 2 secondi,
-			* quindi ho aggiunto il ritardo di 2 secondi prima di abilitare il pulsante di stop.
-			* */
-		}
-
-		btnStopRecord.setOnClickListener {
-			stopRecording()
-			btnStopRecord.isEnabled = false
-			btnRecord.isEnabled = true
-			btnSave.isEnabled = true
-			audioPlayerManager.updateStates(true)
-		}
-
-		// Utilizza AudioPlayerManager per gestire la riproduzione audio
-		audioPlayerManager = AudioPlayerManager(
-			aacFilename,
-			findViewById(R.id.btnPlay),
-			findViewById(R.id.audio_seekbar),
-			findViewById(R.id.tv_current_time),
-			findViewById(R.id.tv_total_time),
-		)
-		audioPlayerManager.startListener()
-
-		btnSave.setOnClickListener {
-			CoroutineScope(Dispatchers.Main).launch {
-				btnSave.isEnabled = false
-				saveRecording()
-			}
-		}
-
-		// Disattivo i pulsanti inizialmente non utilizzabili
-		btnStopRecord.isEnabled = false
-		btnSave.isEnabled = false
-		audioPlayerManager.updateStates(false)
 	}
 
 	private fun startRecording(afterRecordingStarted: () -> Unit = {}) {
-		if (aacFilename.isNotEmpty())
-			File(aacFilename).delete()
+		if (aacFilename.value.isNotEmpty())
+			File(aacFilename.value).delete()
 
 		latestTimestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
-		aacFilename = "${filesDir.absolutePath}/audio_record_$latestTimestamp.aac"
+		aacFilename.value = "${filesDir.absolutePath}/audio_record_$latestTimestamp.aac"
 
 		mediaRecorder = MediaRecorder(this).apply {
 			setAudioSource(MediaRecorder.AudioSource.MIC)
 			setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP)
-			setOutputFile(aacFilename)
+			setOutputFile(aacFilename.value)
 			setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB)
 			try {
 				prepare()
 				start()
-				//Provo ad attivare qui i pulsanti
 				afterRecordingStarted()
-
 			} catch (e: IOException) {
 				e.printStackTrace()
 			}
@@ -154,27 +95,23 @@ class AudioRecorderActivity : AppCompatActivity() {
 			release()
 		}
 		mediaRecorder = null
-		audioPlayerManager.updateAudioFilePath(aacFilename)
-		audioPlayerManager.canPlay = true
-		audioPlayerManager.updateTotalTime()
 	}
 
 	private suspend fun saveRecording() {
-		val mp3Filename = aacFilename.replace(".aac", ".mp3")
+		val mp3Filename = aacFilename.value.replace(".aac", ".mp3")
 		var trimStart = 0
 		val trimIncrement = 5
 		do {
-			val command = arrayOf("-ss", trimStart.toString(), "-i", aacFilename, mp3Filename)
+			val command = arrayOf("-ss", trimStart.toString(), "-i", aacFilename.value, mp3Filename)
 			val result = executeFFmpegCommandAsync(command)
 			if (result != com.arthenica.mobileffmpeg.Config.RETURN_CODE_SUCCESS) {
 				displayToast(this, getString(R.string.failed_file_conversion))
-				return
 			}
 			trimStart += trimIncrement
 		} while (File(mp3Filename).length() > MAX_FILE_SIZE)
 		saveMetaData(mp3Filename)
 		scheduleUpload(mp3Filename)
-		File(aacFilename).delete()
+		File(aacFilename.value).delete()
 	}
 
 	private suspend fun executeFFmpegCommandAsync(command: Array<String>): Int {
@@ -250,7 +187,6 @@ class AudioRecorderActivity : AppCompatActivity() {
 
 	override fun onDestroy() {
 		super.onDestroy()
-		audioPlayerManager.release()
 		mediaRecorder?.release()
 		mediaRecorder = null
 	}
@@ -263,5 +199,4 @@ class AudioRecorderActivity : AppCompatActivity() {
 			workInfos.count { it.state == WorkInfo.State.ENQUEUED }
 		}
 	}
-
 }

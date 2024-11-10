@@ -17,11 +17,9 @@ fun Boolean.toInt() = if (this) 1 else 0
 fun Int.toBoolean() = this != 0
 
 object Constants {
-	const val MAP_VIEW_BUNDLE_KEY: String = "MapViewBundleKey"
 	const val MAX_FILE_SIZE: Long = 5 * 1024 * 1024
 	const val NOT_UPLOADED = -1
-	const val DEFAULT_FETCH_AUDIO_DELAY = 5000L
-	const val MAX_FETCH_AUDIO_DELAY = 10000L
+	const val MIN_RECORDING_DURATION_MS = 2000L
 }
 
 object Workers {

@@ -65,4 +65,8 @@
     <string name="mood">Mood</string>
     <string name="genre">Genre</string>
     <string name="instruments">instruments</string>
+    <string name="search_address">Search Address</string>
+    <string name="search">Search</string>
+    <string name="close_search">Close search</string>
+    <string name="internet_not_enabled">Device is not connected to any network</string>
 </resources>

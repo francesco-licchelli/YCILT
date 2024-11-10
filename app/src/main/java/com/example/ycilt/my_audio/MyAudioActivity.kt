@@ -1,115 +1,81 @@
 package com.example.ycilt.my_audio
 
-import android.app.Dialog
 import android.content.Intent
 import android.os.Bundle
-import android.view.View
-import android.widget.TextView
-import androidx.activity.result.ActivityResultLauncher
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AppCompatActivity
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.ycilt.R
 import com.example.ycilt.utils.AudioInfoSaver.updateMetadataFromBackend
 import com.example.ycilt.utils.Keys.IS_LOGGED
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import java.io.File
 
-class MyAudioActivity : AppCompatActivity() {
+class MyAudioActivity : ComponentActivity() {
 
-	private lateinit var recyclerView: RecyclerView
-	private lateinit var adapter: AudioAdapter
-	private val audioList = mutableListOf<Pair<File, JSONObject>>()
-	private lateinit var audioInfoLauncher: ActivityResultLauncher<Intent>
-	private var loadingDialog: Dialog? = null
+	private val isFetchingSongs = mutableStateOf(true)
+	private var isLoggedIn = false
+	private val audios = mutableStateOf(emptyList<Pair<File, JSONObject>>())
 
 	override fun onCreate(savedInstanceState: Bundle?) {
 		super.onCreate(savedInstanceState)
-		setContentView(R.layout.activity_my_audio)
+		isLoggedIn = intent.getBooleanExtra(IS_LOGGED, false)
 
-		recyclerView = findViewById(R.id.recyclerView_audio)
-		recyclerView.layoutManager = LinearLayoutManager(this)
-
-		audioInfoLauncher = registerForActivityResult(
-			ActivityResultContracts.StartActivityForResult()
-		) { result ->
-			if (result.resultCode == RESULT_OK) {
-				val deletedAudioName = result.data?.getStringExtra("deletedAudioName")
-				if (deletedAudioName != null) {
-					removeAudioFromList(deletedAudioName)
+		setContent {
+			MaterialTheme {
+				Surface {
+					if (isFetchingSongs.value) {
+						LoadingScreen()
+					} else if (audios.value.isEmpty()) {
+						Text(
+							stringResource(R.string.no_uploaded_audio),
+							modifier = Modifier.fillMaxSize().padding(8.dp),
+							fontSize = 20.sp,
+							textAlign = androidx.compose.ui.text.style.TextAlign.Center
+						)
+					} else {
+						AudioList(
+							audio = audios.value,
+							isLoggedIn = isLoggedIn,
+							onAudioClicked = { audio, data ->
+								val intent = Intent(this, MyAudioInfoActivity::class.java)
+								intent.putExtra(IS_LOGGED, isLoggedIn)
+								intent.putExtra("audioName", audio.name)
+								intent.putExtra("audioMetadata", data.toString())
+								startActivity(intent)
+							}
+						)
+					}
 				}
 			}
 		}
-
 	}
 
 	override fun onResume() {
 		super.onResume()
-		showLoadingScreen()
-
 		CoroutineScope(Dispatchers.IO).launch {
-			audioList.clear()
-			val audio = updateMetadataFromBackend(this@MyAudioActivity, intent)
-			audioList.addAll(audio)
-			displayAudio(audioList)
-			withContext(Dispatchers.Main) {
-				hideLoadingScreen()
-			}
-		}
-	}
-
-	private fun showLoadingScreen() {
-		if (loadingDialog == null) {
-			loadingDialog = Dialog(this).apply {
-				setContentView(R.layout.loading_screen)
-				setCancelable(false) // Impedisce di chiuderlo cliccando fuori
-				window?.setBackgroundDrawableResource(android.R.color.transparent)
-			}
-		}
-		loadingDialog?.show()
-	}
-
-	private fun hideLoadingScreen() {
-		loadingDialog?.dismiss()
-	}
-
-	private fun displayAudio(audio: List<Pair<File, JSONObject>>) {
-		CoroutineScope(Dispatchers.IO).launch {
-			runOnUiThread {
-				findViewById<TextView>(R.id.loading_audio).visibility = View.GONE
-				recyclerView.visibility = View.VISIBLE
-			}
-			withContext(Dispatchers.Main) {
-				if (audio.isEmpty()) {
-					findViewById<TextView>(R.id.no_audio_message).visibility = View.VISIBLE
-					recyclerView.visibility = View.GONE
-				} else {
-					findViewById<TextView>(R.id.no_audio_message).visibility = View.GONE
-					recyclerView.visibility = View.VISIBLE
-					adapter = AudioAdapter(
-						audioList,
-						intent.getBooleanExtra(IS_LOGGED, false)
-					)
-					recyclerView.adapter = adapter
-				}
-			}
-		}
-	}
-
-	private fun removeAudioFromList(deletedAudioName: String) {
-		val audioIndex = audioList.indexOfFirst { it.first.name == deletedAudioName }
-		if (audioIndex != -1) {
-			audioList.removeAt(audioIndex)
-			adapter.notifyItemRemoved(audioIndex)
-			if (audioList.isEmpty()) {
-				findViewById<TextView>(R.id.no_audio_message).visibility = View.VISIBLE
-				recyclerView.visibility = View.GONE
-			}
+			isFetchingSongs.value = true
+			audios.value = updateMetadataFromBackend(this@MyAudioActivity, intent)
+			isFetchingSongs.value = false
 		}
 	}
 }

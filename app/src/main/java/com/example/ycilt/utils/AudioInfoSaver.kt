@@ -64,7 +64,9 @@ object AudioInfoSaver {
 	): List<Pair<File, JSONObject>> {
 		val audioList = mutableListOf<Pair<File, JSONObject>>()
 		var remoteAudio = JSONArray()
+		Log.d("AudioInfoSaver", "Updating metadata from backend")
 		if (intent.getBooleanExtra(IS_LOGGED, false)) {
+			Log.d("AudioInfoSaver", "Getting online audio")
 			val remoteData = getOnlineAudio(context)
 			if (remoteData != null) {
 				remoteAudio = remoteData

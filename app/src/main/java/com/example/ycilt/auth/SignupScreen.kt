@@ -163,7 +163,7 @@ fun SignupScreen(
 			colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
 		) {
 			Text(
-				text = stringResource(id = R.string.login),
+				text = stringResource(id = R.string.signup),
 				color = Color.White
 			)
 		}

@@ -24,14 +24,4 @@ object ToastManager {
 		})
 	}
 
-	fun disableToasts() {
-		activeToasts.forEach { it.cancel() }
-		activeToasts.clear()
-		areToastsActive = false
-	}
-
-	fun enableToasts() {
-		areToastsActive = true
-	}
-
 }
