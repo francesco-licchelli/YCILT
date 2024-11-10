@@ -20,6 +20,7 @@ object Constants {
 	const val MAX_FILE_SIZE: Long = 5 * 1024 * 1024
 	const val NOT_UPLOADED = -1
 	const val MIN_RECORDING_DURATION_MS = 2000L
+	const val FETCH_AUDIO_INTERVAL = 5000L
 }
 
 object Workers {

@@ -36,24 +36,22 @@ class MainActivity : ComponentActivity() {
 
 		fun loadAudio(): JSONArray {
 			var audioJsonArray = JSONArray()
-			CoroutineScope(Dispatchers.IO).launch {
-				val (responseCode, responseBody) = getRequest(
-					endpoint = "audio/all",
-					context = this@MainActivity,
-					loginRequired = true
-				)
-				if (responseCode != HttpURLConnection.HTTP_OK) {
-					return@launch
-				}
-				try {
-					audioJsonArray = JSONArray(responseBody)
-				} catch (e: JSONException) {
-					runOnUiThread {
-						displayError(
-							context = this@MainActivity,
-							message = getString(R.string.failed_to_load_audio_error, responseCode)
-						)
-					}
+			val (responseCode, responseBody) = getRequest(
+				endpoint = "audio/all",
+				context = this@MainActivity,
+				loginRequired = true
+			)
+			if (responseCode != HttpURLConnection.HTTP_OK) {
+				return audioJsonArray
+			}
+			try {
+				audioJsonArray = JSONArray(responseBody)
+			} catch (e: JSONException) {
+				runOnUiThread {
+					displayError(
+						context = this@MainActivity,
+						message = getString(R.string.failed_to_load_audio_error, responseCode)
+					)
 				}
 			}
 			return audioJsonArray
@@ -114,7 +112,8 @@ class MainActivity : ComponentActivity() {
 							startActivity(Intent(this, MyAudioActivity::class.java).apply {
 								putExtra(IS_LOGGED, true)
 							})
-						}
+						},
+						fetchAudios = { loadAudio() }
 					)
 				}
 			}

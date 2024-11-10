@@ -39,7 +39,7 @@
     <string name="error_loading_audio_data">Error loading audio data</string>
     <string name="missing_username">Insert username</string>
     <string name="missing_password">Insert password</string>
-    <string name="registration_ok">Registration successful! Now you can login</string>
+    <string name="signup_ok">Signup successful! Now you can login</string>
     <string name="audio_uploaded">Audio uploaded</string>
     <string name="failed_file_conversion">Failed to convert file</string>
     <string name="make_public">Make public</string>
@@ -64,9 +64,10 @@
     <string name="failed_to_load_audio_error">Failed to load audio: error %1$d</string>
     <string name="mood">Mood</string>
     <string name="genre">Genre</string>
-    <string name="instruments">instruments</string>
+    <string name="instruments">Instruments</string>
     <string name="search_address">Search Address</string>
     <string name="search">Search</string>
     <string name="close_search">Close search</string>
     <string name="internet_not_enabled">Device is not connected to any network</string>
+    <string name="audio_queued">Upload will start when connected to Wi-Fi</string>
 </resources>

@@ -39,7 +39,7 @@ class SignupActivity : Auther() {
 		CoroutineScope(Dispatchers.IO).launch {
 			val callback: (String) -> Unit = { _ ->
 				runOnUiThread {
-					displayToast(this@SignupActivity, getString(R.string.registration_ok))
+					displayToast(this@SignupActivity, getString(R.string.signup_ok))
 				}
 				val intent = Intent(this@SignupActivity, LoginActivity::class.java)
 				startActivity(intent)

@@ -17,6 +17,7 @@ import com.example.ycilt.others_audio.AudioInfoActivity
 import com.example.ycilt.utils.Constants.NOT_UPLOADED
 import com.example.ycilt.utils.Keys.IS_LOGGED
 import com.example.ycilt.utils.Misc.audioToMetadataFilename
+import com.example.ycilt.utils.Privacy.PUBLIC_AUDIO
 import com.example.ycilt.utils.Privacy.UNKNOWN_PRIVACY
 import com.example.ycilt.utils.ToastManager.displayToast
 import com.example.ycilt.utils.toBoolean
@@ -215,6 +216,28 @@ class MyAudioInfoActivity : AppCompatActivity() {
 		hiddenStatus.intValue = if (audioMetadata.has("hidden")) audioMetadata.getBoolean("hidden")
 			.toInt() else UNKNOWN_PRIVACY
 
+		/*
+		* override fun onResume() {
+		super.onResume()
+		for (button in listOf(deleteButton, privacyButton)) {
+			button.isEnabled = intent.getBooleanExtra(IS_LOGGED, false)
+		}
+		if (intent.getBooleanExtra(IS_LOGGED, false)) {
+			updatePrivacyButton()
+		}
+
+		if (audioId == NOT_UPLOADED) {
+			privacyButton.isEnabled = false
+		}
+
+		showInfoButton.isEnabled = true
+		if (hiddenStatus != PUBLIC_AUDIO || audioId == NOT_UPLOADED) {
+			showInfoButton.isEnabled = false
+		}
+	}
+*/
+
+
 		setContent {
 			MyAudioInfoScreen(
 				hiddenStatus = hiddenStatus,
@@ -223,10 +246,15 @@ class MyAudioInfoActivity : AppCompatActivity() {
 				onDeleteAudio = { deleteAudio() },
 				onChangePrivacy = { changePrivacy() },
 				onShowInfo = { showAudioInfo() },
-				//TODO prendere i valori reali
 				canDeleteAudio = intent.getBooleanExtra(IS_LOGGED, false),
-				canChangePrivacy = intent.getBooleanExtra(IS_LOGGED, false),
-				canShowInfo = true
+				canChangePrivacy = intent.getBooleanExtra(
+					IS_LOGGED,
+					false
+				) && audioId != NOT_UPLOADED,
+				canShowInfo = intent.getBooleanExtra(
+					IS_LOGGED,
+					false
+				) && audioId != NOT_UPLOADED,
 			)
 		}
 	}

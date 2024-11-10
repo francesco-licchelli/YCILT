@@ -2,7 +2,6 @@ package com.example.ycilt.my_audio
 
 import android.media.MediaRecorder
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.compose.setContent
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.runtime.MutableState
@@ -42,7 +41,6 @@ class AudioRecorderActivity : AppCompatActivity() {
 	private var mediaRecorder: MediaRecorder? = null
 	private var aacFilename: MutableState<String> = mutableStateOf("")
 	private var latestTimestamp: String? = null
-	private var enqueuedAudio: Int = 0
 
 
 	override fun onCreate(savedInstanceState: Bundle?) {
@@ -51,11 +49,9 @@ class AudioRecorderActivity : AppCompatActivity() {
 			AudioRecorderScreen(
 				startRecording = { afterRecordingStarted ->
 					startRecording(afterRecordingStarted)
-					Log.d("AudioRecorder", "File path 1: $aacFilename")
 				},
 				stopRecording = {
 					stopRecording()
-					Log.d("AudioRecorder", "File path 2: $aacFilename")
 				},
 				audioFilename = aacFilename,
 				saveRecording = { saveRecording() },
@@ -154,10 +150,9 @@ class AudioRecorderActivity : AppCompatActivity() {
 			onSucceeded = {
 				displayToast(this, getString(R.string.audio_uploaded))
 				CoroutineScope(Dispatchers.Main).launch {
-					//Quando finisco di caricare una canzone, salvo le informazioni del backend
+					//Quando finisco di caricare tutti gli audio, salvo le informazioni del backend
 					if (getPendingAudioUploaderWorkersCount() == 0) {
 						updateMetadataFromBackend(this@AudioRecorderActivity, intent)
-						Log.d("AudioRecorderActivity", "Metadata updated")
 					}
 				}
 				finish()
@@ -169,19 +164,27 @@ class AudioRecorderActivity : AppCompatActivity() {
 			if (!PermissionUtils.hasNotificationPermission(this))
 				PermissionUtils.requestNotificationPermission(this)
 
+			val newQueueLength =
+				getSharedPreferences("audio_queue", MODE_PRIVATE).getInt("queue_length", 0) + 1
+			getSharedPreferences("audio_queue", MODE_PRIVATE).edit()
+				.putInt("queue_length", newQueueLength).apply()
+
 			WorkerManager.enqueueWorker(
 				this,
 				OneTimeWorkRequestBuilder<NotificationWorker>(),
-				Data.Builder().putInt("audioCount", ++enqueuedAudio).build(),
+				Data.Builder().putInt("audioCount", newQueueLength).build(),
 				Builder().setRequiredNetworkType(NetworkType.UNMETERED).build(),
 				listOf("notification"),
 				beforeWork = {
 					WorkManager.getInstance(this).cancelAllWorkByTag("notification")
 				},
 				onSucceeded = {
-					enqueuedAudio = 0
+					getSharedPreferences("audio_queue", MODE_PRIVATE).edit()
+						.putInt("queue_length", 0).apply()
 				}
 			)
+			displayToast(this, getString(R.string.audio_queued))
+			finish()
 		}
 	}
 

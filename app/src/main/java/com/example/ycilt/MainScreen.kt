@@ -32,20 +32,23 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.ycilt.utils.Constants.FETCH_AUDIO_INTERVAL
 import com.example.ycilt.utils.Misc
 import com.example.ycilt.utils.PermissionUtils
 import com.example.ycilt.utils.ToastManager.displayToast
 import com.google.android.gms.location.LocationServices
-import com.google.android.gms.maps.internal.IGoogleMapDelegate
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.CameraPositionState
 import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.MapProperties
 import com.google.maps.android.compose.MapUiSettings
+import com.google.maps.android.compose.Marker
+import com.google.maps.android.compose.MarkerState
 import com.google.maps.android.compose.rememberCameraPositionState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
@@ -58,14 +61,13 @@ fun MainScreen(
 	onNavigateToAudioRecorder: (Double, Double) -> Unit,
 	onNavigateToDeleteAccount: () -> Unit,
 	onNavigateToAudioInfo: (Int) -> Unit,
-	onNavigateToMyAudio: () -> Unit
+	onNavigateToMyAudio: () -> Unit,
+	fetchAudios: () -> JSONArray
 ) {
 	val context: Context = LocalContext.current
 	val activity: Activity = context as Activity
 
-	val audios = remember { mutableStateOf(JSONArray()) }
-	val googleMap = remember { mutableStateOf<IGoogleMapDelegate?>(null) }
-
+	val markerStates = remember { mutableStateListOf<Pair<MarkerState, Int>>() }
 	val drawerState = rememberDrawerState(DrawerValue.Closed)
 	val coroutineScope = rememberCoroutineScope()
 	val focusRequester = remember { FocusRequester() }
@@ -77,15 +79,33 @@ fun MainScreen(
 
 	val cameraPositionState = rememberCameraPositionState {
 		position = CameraPosition.fromLatLngZoom(LatLng(45.0, 12.0), 15f)
-	}
+	}    // Effetto lanciato per aggiornare i marker ogni 5 secondi
 
+	LaunchedEffect(Unit) {
+		while (true) {
+			// Ottieni i nuovi dati dai marker
+			val newLocations = fetchAudios()
+			Log.d("MainScreen", "Ricevuti ${newLocations.length()} marker")
+
+			// Aggiorna la lista dei MarkerState
+			markerStates.clear() // Rimuovi i marker esistenti
+			for (i in 0 until newLocations.length()) {
+				val location = newLocations.getJSONObject(i)
+				val lat = location.getDouble("latitude")
+				val lng = location.getDouble("longitude")
+				val id = location.getInt("id")
+				markerStates.add(MarkerState(position = LatLng(lat, lng)) to id)
+			}
+			Log.d("MainScreen", "Aggiornati i ${markerStates.size} marker")
+
+			delay(FETCH_AUDIO_INTERVAL)
+		}
+	}
 
 	userLocation = getUserLocationAndUpdateMap(
 		activity,
 		cameraPositionState
 	)
-	Log.d("MainActivity", "userLocation: $userLocation")
-
 
 	ModalNavigationDrawer(
 		drawerState = drawerState,
@@ -165,7 +185,19 @@ fun MainScreen(
 						modifier = Modifier.fillMaxSize(),
 						properties = MapProperties(isMyLocationEnabled = true),
 						uiSettings = MapUiSettings(zoomControlsEnabled = false),
-					)
+					) {
+						markerStates.forEach { (state, id) ->
+							Log.d("MainScreen", "Aggiunto un marker")
+							Marker(
+								state = state,
+								tag = id,
+								onClick = {
+									onNavigateToAudioInfo(id)
+									true
+								}
+							)
+						}
+					}
 				}
 			}
 		}
@@ -355,7 +387,8 @@ fun MainScreenPreview() {
 				onNavigateToAudioRecorder = { _, _ -> },
 				onNavigateToDeleteAccount = {},
 				onNavigateToAudioInfo = {},
-				onNavigateToMyAudio = {}
+				onNavigateToMyAudio = {},
+				fetchAudios = { JSONArray() }
 			)
 		}
 	}
