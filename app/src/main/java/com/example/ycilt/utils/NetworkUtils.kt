@@ -5,9 +5,9 @@ import android.content.Context.MODE_PRIVATE
 import android.content.Intent
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
-import android.util.Log
 import com.example.ycilt.R
 import com.example.ycilt.auth.LoginActivity
+import com.example.ycilt.utils.Keys.SHARED_PREFS
 import com.example.ycilt.utils.Keys.TOKEN
 import com.example.ycilt.utils.Urls.BASE_URL
 import okhttp3.MediaType.Companion.toMediaType
@@ -100,8 +100,6 @@ object NetworkUtils {
 	private fun reqToPair(response: retrofit2.Response<ResponseBody>): Pair<Int, String> {
 		val responseCode = response.code()
 		val responseBody = response.body()?.string() ?: response.errorBody()?.string() ?: ""
-		Log.d("NetworkUtils", "Response code: $responseCode")
-		Log.d("NetworkUtils", "Response body: $responseBody")
 		return Pair(responseCode, responseBody)
 	}
 
@@ -125,7 +123,7 @@ object NetworkUtils {
 		queryParams: Map<String, String>? = mapOf(),
 		isFullEndpoint: Boolean = false
 	): Pair<Int, String> {
-		val clientSecret = context.getSharedPreferences("shared_prefs", MODE_PRIVATE)
+		val clientSecret = context.getSharedPreferences(SHARED_PREFS, MODE_PRIVATE)
 			?.getString(TOKEN, null)
 		return try {
 			val result = reqToPair(
@@ -156,7 +154,7 @@ object NetworkUtils {
 		body: Map<String, String>? = mapOf(),
 		encode: (Map<String, String>) -> RequestBody = { jsonEncoding(it) }
 	): Pair<Int, String> {
-		val clientSecret = context.getSharedPreferences("shared_prefs", MODE_PRIVATE)
+		val clientSecret = context.getSharedPreferences(SHARED_PREFS, MODE_PRIVATE)
 			?.getString(TOKEN, null)
 		return try {
 			val result = reqToPair(
@@ -188,7 +186,7 @@ object NetworkUtils {
 		queryParams: Map<String, String>,
 		audio: File //carico solo audio/mpeg, non generalizzo
 	): Pair<Int, String> {
-		val clientSecret = context.getSharedPreferences("shared_prefs", MODE_PRIVATE)
+		val clientSecret = context.getSharedPreferences(SHARED_PREFS, MODE_PRIVATE)
 			?.getString(TOKEN, null)
 		return try {
 			val filePart = MultipartBody.Part.createFormData(
@@ -222,7 +220,7 @@ object NetworkUtils {
 		context: Context,
 		loginRequired: Boolean = false
 	): Pair<Int, String> {
-		val clientSecret = context.getSharedPreferences("shared_prefs", MODE_PRIVATE)
+		val clientSecret = context.getSharedPreferences(SHARED_PREFS, MODE_PRIVATE)
 			?.getString(TOKEN, null)
 		return try {
 			val result = reqToPair(

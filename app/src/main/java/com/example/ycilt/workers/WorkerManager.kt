@@ -48,7 +48,6 @@ object WorkerManager {
 		tags.forEach { tag -> workBuilder.addTag(tag) }
 		val workerRequest = workBuilder.build()
 
-		Log.d("WorkerManager", "Enqueuing work with ID: ${workerRequest.id}")
 		workManager.enqueue(workerRequest)
 		observeWorkCompletion(
 			owner,
@@ -79,7 +78,6 @@ object WorkerManager {
 					if (it.state.isFinished) {
 						when (it.state) {
 							WorkInfo.State.SUCCEEDED -> {
-								Log.d("WorkerManager", "Work with ID: $workId succeeded")
 								onSucceeded()
 							}
 
@@ -100,11 +98,11 @@ object WorkerManager {
 							}
 
 							WorkInfo.State.CANCELLED -> {
-								Log.d("WorkerManager", "Work with ID: $workId cancelled")
+								Log.w("WorkerManager", "Work with ID: $workId cancelled")
 							}
 
 							else -> {
-								Log.d(
+								Log.w(
 									"WorkerManager",
 									"Work with ID: $workId is in an unknown state"
 								)
@@ -118,10 +116,8 @@ object WorkerManager {
 	}
 
 	fun resumeAll() {
-		Log.d("WorkerManager", "Resuming all ${deferredWorks.size} pending works")
 		deferredWorks.toList().forEach {
 			enqueueWorker(it.owner, it.workerClass, it.inputData, it.constraints, it.tags)
-			Log.d("WorkerManager", "Resumed work with ID: ${it.id}")
 		}
 		deferredWorks.clear()
 	}

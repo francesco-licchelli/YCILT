@@ -116,8 +116,7 @@ fun SectionContent(items: List<Pair<String, Float>>, label: Int) {
 			modifier = Modifier.fillMaxWidth(),
 			style = MaterialTheme.typography.titleLarge
 		)
-		LazyColumn(
-		) {
+		LazyColumn {
 			items(items) { (item, value) ->
 				Text(
 					text = stringResource(R.string.cat_displayer, item, value),

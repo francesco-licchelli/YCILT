@@ -7,7 +7,6 @@ import android.util.Log
 import com.example.ycilt.others_audio.AudioDetails
 import com.example.ycilt.utils.Constants.NOT_UPLOADED
 import com.example.ycilt.utils.Keys.IS_LOGGED
-import com.example.ycilt.utils.Misc.audioToMetadataFilename
 import com.example.ycilt.utils.NetworkUtils.getRequest
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -28,7 +27,6 @@ object AudioInfoSaver {
 		val jsonList = mutableListOf<JSONObject>()
 		try {
 			val jsonString = file.readText() // Leggi il contenuto del file
-			Log.d("MyAudioActivity", "Json string: $jsonString")
 			jsonList.add(JSONObject(jsonString))
 		} catch (e: Exception) {
 			e.printStackTrace()
@@ -43,8 +41,6 @@ object AudioInfoSaver {
 				context = context,
 				loginRequired = true,
 			)
-			Log.d("AudioInfoSaver", "Response code: $responseCode")
-			Log.d("AudioInfoSaver", "Response body: $responseBody")
 			if (responseCode == 200) {
 				try {
 					JSONArray(responseBody)
@@ -64,9 +60,7 @@ object AudioInfoSaver {
 	): List<Pair<File, JSONObject>> {
 		val audioList = mutableListOf<Pair<File, JSONObject>>()
 		var remoteAudio = JSONArray()
-		Log.d("AudioInfoSaver", "Updating metadata from backend")
 		if (intent.getBooleanExtra(IS_LOGGED, false)) {
-			Log.d("AudioInfoSaver", "Getting online audio")
 			val remoteData = getOnlineAudio(context)
 			if (remoteData != null) {
 				remoteAudio = remoteData

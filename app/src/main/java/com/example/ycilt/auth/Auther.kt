@@ -2,9 +2,9 @@ package com.example.ycilt.auth
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
-import com.example.ycilt.utils.Misc
 import com.example.ycilt.utils.NetworkUtils
 import com.example.ycilt.utils.NetworkUtils.postRequest
+import com.example.ycilt.utils.displayError
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.net.HttpURLConnection
@@ -39,7 +39,7 @@ abstract class Auther : AppCompatActivity() {
 			val response = auth(username, password)
 			val (responseStatus, responseBody) = response
 			if (responseStatus != HttpURLConnection.HTTP_OK) {
-				runOnUiThread { Misc.displayError(this@Auther, responseBody) }
+				runOnUiThread { displayError(this@Auther, responseBody) }
 			} else {
 				success(responseBody)
 			}

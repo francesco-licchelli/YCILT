@@ -17,9 +17,10 @@ import com.example.ycilt.R
 import com.example.ycilt.utils.AudioInfoSaver.updateMetadataFromBackend
 import com.example.ycilt.utils.Constants.MAX_FILE_SIZE
 import com.example.ycilt.utils.Constants.NOT_UPLOADED
-import com.example.ycilt.utils.Misc.audioToMetadataFilename
-import com.example.ycilt.utils.PermissionUtils
+import com.example.ycilt.utils.Keys.AUDIO_QUEUE
+import com.example.ycilt.utils.Keys.AUDIO_QUEUE_LENGTH
 import com.example.ycilt.utils.ToastManager.displayToast
+import com.example.ycilt.utils.audioToMetadataFilename
 import com.example.ycilt.utils.isConnectedToWifi
 import com.example.ycilt.workers.NotificationWorker
 import com.example.ycilt.workers.UploadAudioWorker
@@ -58,9 +59,6 @@ class AudioRecorderActivity : AppCompatActivity() {
 			)
 		}
 
-		if (!PermissionUtils.hasRecordPermission(this)) {
-			PermissionUtils.requestRecordPermission(this)
-		}
 	}
 
 	private fun startRecording(afterRecordingStarted: () -> Unit = {}) {
@@ -161,13 +159,10 @@ class AudioRecorderActivity : AppCompatActivity() {
 
 		if (!isConnectedToWifi(this)) {
 
-			if (!PermissionUtils.hasNotificationPermission(this))
-				PermissionUtils.requestNotificationPermission(this)
-
 			val newQueueLength =
-				getSharedPreferences("audio_queue", MODE_PRIVATE).getInt("queue_length", 0) + 1
-			getSharedPreferences("audio_queue", MODE_PRIVATE).edit()
-				.putInt("queue_length", newQueueLength).apply()
+				getSharedPreferences(AUDIO_QUEUE, MODE_PRIVATE).getInt(AUDIO_QUEUE_LENGTH, 0) + 1
+			getSharedPreferences(AUDIO_QUEUE, MODE_PRIVATE).edit()
+				.putInt(AUDIO_QUEUE_LENGTH, newQueueLength).apply()
 
 			WorkerManager.enqueueWorker(
 				this,
@@ -179,8 +174,8 @@ class AudioRecorderActivity : AppCompatActivity() {
 					WorkManager.getInstance(this).cancelAllWorkByTag("notification")
 				},
 				onSucceeded = {
-					getSharedPreferences("audio_queue", MODE_PRIVATE).edit()
-						.putInt("queue_length", 0).apply()
+					getSharedPreferences(AUDIO_QUEUE, MODE_PRIVATE).edit()
+						.putInt(AUDIO_QUEUE_LENGTH, 0).apply()
 				}
 			)
 			displayToast(this, getString(R.string.audio_queued))

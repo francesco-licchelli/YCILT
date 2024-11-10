@@ -32,13 +32,17 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.fragment.app.FragmentActivity
 import com.example.ycilt.R
 import com.example.ycilt.utils.AudioPlayer
 import com.example.ycilt.utils.Constants.MIN_RECORDING_DURATION_MS
+import com.example.ycilt.utils.PermissionUtils
 import com.example.ycilt.utils.ToastManager.displayToast
+import com.example.ycilt.utils.isConnectedToWifi
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -93,6 +97,17 @@ fun AudioRecorderScreen(
 				// Bottone per iniziare la registrazione
 				Button(
 					onClick = {
+						if (!PermissionUtils.hasRecordPermission(context)) {
+							PermissionUtils.requestRecordPermission(context as Activity)
+							return@Button
+						}
+						if (!isConnectedToWifi(context) && !PermissionUtils.hasNotificationPermission(
+								context
+							)
+						) {
+							PermissionUtils.requestNotificationPermission(context as FragmentActivity)
+							return@Button
+						}
 						displayToast(context, context.getString(R.string.starting_recording))
 						isPlayable.value = false
 						isRecordEnabled = false
@@ -128,7 +143,6 @@ fun AudioRecorderScreen(
 					Text(stringResource(R.string.stop_recording))
 				}
 
-				// Lettore Audio
 				AudioPlayer(
 					audioFilename = audioFilename,
 					isButtonEnabled = isPlayable

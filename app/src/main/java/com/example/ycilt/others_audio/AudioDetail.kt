@@ -1,6 +1,6 @@
 package com.example.ycilt.others_audio
 
-import com.example.ycilt.utils.Misc
+import com.example.ycilt.utils.jsonToCat
 import org.json.JSONObject
 
 data class Category(val options: Map<String, Float>) {
@@ -31,13 +31,12 @@ data class AudioDetails(
 		/*
 			danceability, secondo le specifiche, dovrebbe essere un valore compreso in [0, 1].
 			Tuttavia, alcuni audio gia' presenti nel backend hanno valori maggiori di 1.
-			Ignoro la cosa per il momento
 		*/
 		danceability = audioJson.getJSONObject("tags").getDouble("danceability") * 100,
 		loudness = audioJson.getJSONObject("tags").getDouble("loudness"),
-		mood = Misc.jsonToCat(audioJson.getJSONObject("tags").getJSONObject("mood")),
-		genre = Misc.jsonToCat(audioJson.getJSONObject("tags").getJSONObject("genre")),
-		instrument = Misc.jsonToCat(audioJson.getJSONObject("tags").getJSONObject("instrument"))
+		mood = jsonToCat(audioJson.getJSONObject("tags").getJSONObject("mood")),
+		genre = jsonToCat(audioJson.getJSONObject("tags").getJSONObject("genre")),
+		instrument = jsonToCat(audioJson.getJSONObject("tags").getJSONObject("instrument"))
 	)
 
 }

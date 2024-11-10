@@ -1,6 +1,5 @@
 <resources>
     <string name="app_name">YCILT</string>
-    <string name="address">Address</string>
     <string name="password">Password</string>
     <string name="login">Log in</string>
     <string name="already_have_an_account_login">Already have an account? Log in</string>
@@ -10,23 +9,16 @@
     <string name="title_1">YOUR CITY</string>
     <string name="title_2">IS</string>
     <string name="title_3">LISTENING TO</string>
-    <string name="yclit_logo">YCLIT Logo</string>
-    <string name="menu">account menu</string>
     <string name="add_audio">Upload new audio</string>
     <string name="start_recording">Start new recording</string>
     <string name="record_new_audio">Record new audio</string>
-    <string name="play_recording">Play recording</string>
     <string name="upload_new_audio">Upload new audio</string>
-    <string name="close">Close</string>
     <string name="logout">Logout</string>
     <string name="delete_account">Delete your account</string>
     <string name="my_uploads">My uploads</string>
     <string name="no_uploaded_audio">You haven\'t uploaded any audio yet.</string>
-    <string name="map_view">Map View</string>
-    <string name="default_audio_length">00:00</string>
     <string name="stop_recording">Stop Recording</string>
     <string name="my_audio">My audio</string>
-    <string name="fetching_audio">Fetching audio</string>
     <string name="view_recording_info">View Audio Info</string>
     <string name="delete_audio">Delete audio</string>
     <string name="change_audio_s_privacy">Change audio\'s privacy</string>
@@ -35,8 +27,6 @@
     <string name="danceability">Danceability: %.1f</string>
     <string name="loudness">Loudness: %1$.2f</string>
     <string name="cat_displayer">%1$s: %2$.2f</string>
-    <string name="audio_not_found">Audio not found</string>
-    <string name="error_loading_audio_data">Error loading audio data</string>
     <string name="missing_username">Insert username</string>
     <string name="missing_password">Insert password</string>
     <string name="signup_ok">Signup successful! Now you can login</string>
@@ -49,25 +39,16 @@
     <string name="generic_error">An error occurred during the request</string>
     <string name="username_icon">Username Icon</string>
     <string name="password_icon">Password Icon</string>
-    <string name="audio_name">Audio Name</string>
-    <string name="loading_location">Loading location…</string>
-    <string name="gps_permission_needed">Location not available</string>
-    <string name="recording_started">Recording started</string>
     <string name="starting_recording">Starting recording…</string>
-    <string name="cant_resolve_address">Error while resolving the address</string>
-    <string name="activate_gps">Activate GPS</string>
-    <string name="internet_permission_needed">Internet permission needed</string>
-    <string name="activate_internet">Activate internet\n</string>
-    <string name="activate_microphone">Enable the mic to start recording</string>
     <string name="notification_title">Connected to Wi-FI</string>
     <string name="notification_message">I\'m uploading %1$d audio file%2$s to the server</string>
     <string name="failed_to_load_audio_error">Failed to load audio: error %1$d</string>
     <string name="mood">Mood</string>
     <string name="genre">Genre</string>
     <string name="instruments">Instruments</string>
-    <string name="search_address">Search Address</string>
     <string name="search">Search</string>
-    <string name="close_search">Close search</string>
-    <string name="internet_not_enabled">Device is not connected to any network</string>
     <string name="audio_queued">Upload will start when connected to Wi-Fi</string>
+    <string name="activate_internet">Activate internet connection</string>
+    <string name="activate_gps">Activate GPS</string>
+
 </resources>

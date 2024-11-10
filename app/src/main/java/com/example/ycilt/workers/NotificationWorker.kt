@@ -43,7 +43,7 @@ class NotificationWorker(
 		val notification = NotificationCompat.Builder(applicationContext, channelId)
 			.setContentTitle(title)
 			.setContentText(message)
-			.setSmallIcon(android.R.drawable.ic_dialog_info)
+			.setSmallIcon(R.drawable.ic_logo)
 			.setPriority(NotificationCompat.PRIORITY_DEFAULT)
 			.build()
 

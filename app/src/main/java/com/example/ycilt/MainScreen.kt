@@ -8,7 +8,16 @@ import android.content.res.Configuration
 import android.location.Location
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -16,8 +25,28 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalNavigationDrawer
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.rememberDrawerState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -32,9 +61,10 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.ycilt.utils.Constants.FETCH_AUDIO_INTERVAL
-import com.example.ycilt.utils.Misc
-import com.example.ycilt.utils.PermissionUtils
+import com.example.ycilt.utils.Coords.DEFAULT_LATITUDE
+import com.example.ycilt.utils.Coords.DEFAULT_LONGITUDE
 import com.example.ycilt.utils.ToastManager.displayToast
+import com.example.ycilt.utils.addrToCoord
 import com.example.ycilt.utils.toList
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.model.CameraPosition
@@ -62,7 +92,8 @@ fun MainScreen(
 	onNavigateToDeleteAccount: () -> Unit,
 	onNavigateToAudioInfo: (Int) -> Unit,
 	onNavigateToMyAudio: () -> Unit,
-	fetchAudios: () -> JSONArray
+	fetchAudios: () -> JSONArray,
+	locationPermittedState: MutableState<Boolean>
 ) {
 	val context: Context = LocalContext.current
 	val activity: Activity = context as Activity
@@ -84,7 +115,7 @@ fun MainScreen(
 	fun updateMarkers(audios: JSONArray) {
 		markerStates.removeAll { (_, id) ->
 			audios.toList().none { it.getInt("id") == id }
-		}
+		}.toString()
 		audios.toList().filter { newLocation ->
 			markerStates.none { (_, id) -> id == newLocation.getInt("id") }
 		}.forEach { newLocation ->
@@ -93,7 +124,6 @@ fun MainScreen(
 			val id = newLocation.getInt("id")
 			markerStates.add(MarkerState(position = LatLng(lat, lng)) to id)
 		}
-
 	}
 
 	LaunchedEffect(Unit) {
@@ -186,7 +216,7 @@ fun MainScreen(
 					GoogleMap(
 						cameraPositionState = cameraPositionState,
 						modifier = Modifier.fillMaxSize(),
-						properties = MapProperties(isMyLocationEnabled = true),
+						properties = MapProperties(isMyLocationEnabled = locationPermittedState.value),
 						uiSettings = MapUiSettings(zoomControlsEnabled = false),
 						onMapLoaded = {
 							CoroutineScope(Dispatchers.IO).launch {
@@ -276,32 +306,25 @@ fun getUserLocationAndUpdateMap(
 	activity: Activity,
 	cameraPositionState: CameraPositionState
 ): LatLng? {
-	// Definisci uno stato per memorizzare la posizione
 	var userLocation by remember { mutableStateOf<LatLng?>(null) }
 
-	// Controlla i permessi e ottieni la posizione
 	LaunchedEffect(Unit) {
-		while (!PermissionUtils.hasLocationPermission(activity)) {
-			PermissionUtils.requestLocationPermission(activity)
-		}
 
-		// Ottieni il client per la localizzazione
 		val fusedLocationClient = LocationServices.getFusedLocationProviderClient(activity)
 
-		fusedLocationClient.lastLocation.addOnSuccessListener { location: Location? ->
-			location?.let {
-				val result = LatLng(it.latitude, it.longitude)
-
-				// Aggiorna lo stato della posizione utente
-				userLocation = result
-
-				// Aggiorna la posizione della mappa
-				cameraPositionState.position = CameraPosition.fromLatLngZoom(result, 15f)
+		fusedLocationClient.lastLocation
+			.addOnSuccessListener { location: Location? ->
+				location?.let {
+					val result = LatLng(it.latitude, it.longitude)
+					userLocation = result
+					cameraPositionState.position = CameraPosition.fromLatLngZoom(result, 15f)
+				}
+			}.addOnFailureListener {
+				userLocation = LatLng(DEFAULT_LATITUDE, DEFAULT_LONGITUDE)
+				cameraPositionState.position = CameraPosition.fromLatLngZoom(userLocation!!, 15f)
 			}
-		}
 	}
 
-	// Restituisci la posizione utente corrente (inizialmente null)
 	return userLocation
 }
 
@@ -343,11 +366,10 @@ fun SearchBar(
 		),
 		keyboardActions = KeyboardActions(
 			onDone = {
-				// Quando l'utente preme "Fatto" sulla tastiera
 				CoroutineScope(Dispatchers.Main).launch {
 					withContext(Dispatchers.IO) {
 						val apiKey = getApiKeyFromManifest() ?: ""
-						val result = Misc.addrToCoord(searchText.text, apiKey, context)
+						val result = addrToCoord(searchText.text, apiKey, context)
 
 						if (result == null) {
 							withContext(Dispatchers.Main) {
@@ -365,7 +387,6 @@ fun SearchBar(
 						keyboardController?.hide()
 					}
 				}
-//				onSubmit(searchText.text) // Esegui l'azione
 			}
 		),
 		leadingIcon = {
@@ -394,7 +415,8 @@ fun MainScreenPreview() {
 				onNavigateToDeleteAccount = {},
 				onNavigateToAudioInfo = {},
 				onNavigateToMyAudio = {},
-				fetchAudios = { JSONArray() }
+				fetchAudios = { JSONArray() },
+				locationPermittedState = remember { mutableStateOf(false) }
 			)
 		}
 	}

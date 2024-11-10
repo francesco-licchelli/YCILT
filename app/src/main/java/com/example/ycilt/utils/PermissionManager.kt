@@ -5,10 +5,8 @@ import android.app.Activity
 import android.content.Context
 import android.content.pm.PackageManager
 import android.location.LocationManager
-import android.media.AudioManager
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
-import android.os.Build
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
@@ -55,6 +53,7 @@ object PermissionUtils {
 				LOCATION_PERMISSION_REQUEST_CODE
 			)
 		}
+
 	}
 
 	fun isLocationEnabled(context: Context): Boolean {

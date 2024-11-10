@@ -28,8 +28,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.ycilt.R
 import com.example.ycilt.utils.AudioPlayer
-import com.example.ycilt.utils.Misc
 import com.example.ycilt.utils.Privacy.PRIVATE_AUDIO
+import com.example.ycilt.utils.coordToAddr
 import org.json.JSONObject
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -54,7 +54,7 @@ fun MyAudioInfoScreen(
 	val locationInfo = remember { mutableStateOf<String?>(null) }
 
 	LaunchedEffect(latitude, longitude) {
-		Misc.coordToAddr(context, latitude, longitude) { address ->
+		coordToAddr(context, latitude, longitude) { address ->
 			locationInfo.value = address
 		}
 	}
