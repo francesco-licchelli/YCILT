@@ -55,7 +55,7 @@ fun AudioList(
 			LazyColumn(
 				modifier = Modifier
 					.fillMaxSize()
-					.padding(paddingValues),
+					.padding(paddingValues)
 			) {
 				items(audio.size) { index ->
 					AudioItem(

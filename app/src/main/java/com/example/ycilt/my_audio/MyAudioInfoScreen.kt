@@ -73,7 +73,10 @@ fun MyAudioInfoScreen(
 			)
 		},
 		content = { paddingValues ->
-			Column(modifier = Modifier.padding(16.dp)) {
+			Column(
+				modifier = Modifier
+					.padding(16.dp)
+			) {
 				Text(
 					text = audioFilename,
 					modifier = Modifier

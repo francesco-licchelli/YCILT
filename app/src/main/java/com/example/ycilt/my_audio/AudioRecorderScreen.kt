@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
@@ -17,7 +19,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
@@ -29,7 +30,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.ycilt.R
@@ -39,7 +39,6 @@ import com.example.ycilt.utils.ToastManager.displayToast
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -51,8 +50,6 @@ fun AudioRecorderScreen(
 ) {
 	val context = LocalContext.current
 	var mediaRecorder by remember { mutableStateOf<MediaRecorder?>(null) }
-	var aacFilename: String = ""
-	val latestTimestamp = remember { mutableStateOf<String?>(null) }
 
 	var isRecordEnabled by remember { mutableStateOf(true) }
 	var isStopEnabled by remember { mutableStateOf(false) }
@@ -69,7 +66,6 @@ fun AudioRecorderScreen(
 						if (mediaRecorder != null) {
 							mediaRecorder?.release()
 							mediaRecorder = null
-							File(aacFilename).takeIf { it.exists() }?.delete()
 						}
 						(context as Activity).finish()
 					}) {
@@ -83,6 +79,7 @@ fun AudioRecorderScreen(
 				modifier = Modifier
 					.fillMaxSize()
 					.padding(paddingValues)
+					.verticalScroll(rememberScrollState())
 					.padding(16.dp),
 				horizontalAlignment = Alignment.CenterHorizontally
 			) {
