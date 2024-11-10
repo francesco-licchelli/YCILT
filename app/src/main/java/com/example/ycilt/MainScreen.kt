@@ -6,7 +6,6 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.location.Location
-import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -36,6 +35,7 @@ import com.example.ycilt.utils.Constants.FETCH_AUDIO_INTERVAL
 import com.example.ycilt.utils.Misc
 import com.example.ycilt.utils.PermissionUtils
 import com.example.ycilt.utils.ToastManager.displayToast
+import com.example.ycilt.utils.toList
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
@@ -52,6 +52,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
+import org.json.JSONObject
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -79,24 +80,23 @@ fun MainScreen(
 
 	val cameraPositionState = rememberCameraPositionState {
 		position = CameraPosition.fromLatLngZoom(LatLng(45.0, 12.0), 15f)
-	}    // Effetto lanciato per aggiornare i marker ogni 5 secondi
+	}
 
 	LaunchedEffect(Unit) {
 		while (true) {
-			// Ottieni i nuovi dati dai marker
 			val newLocations = fetchAudios()
-			Log.d("MainScreen", "Ricevuti ${newLocations.length()} marker")
 
-			// Aggiorna la lista dei MarkerState
-			markerStates.clear() // Rimuovi i marker esistenti
-			for (i in 0 until newLocations.length()) {
-				val location = newLocations.getJSONObject(i)
-				val lat = location.getDouble("latitude")
-				val lng = location.getDouble("longitude")
-				val id = location.getInt("id")
+			markerStates.removeAll { (_, id) ->
+				newLocations.toList().none { it.getInt("id") == id }
+			}
+			newLocations.toList().filter { newLocation ->
+				markerStates.none { (_, id) -> id == newLocation.getInt("id") }
+			}.forEach { newLocation ->
+				val lat = newLocation.getDouble("latitude")
+				val lng = newLocation.getDouble("longitude")
+				val id = newLocation.getInt("id")
 				markerStates.add(MarkerState(position = LatLng(lat, lng)) to id)
 			}
-			Log.d("MainScreen", "Aggiornati i ${markerStates.size} marker")
 
 			delay(FETCH_AUDIO_INTERVAL)
 		}
@@ -187,7 +187,6 @@ fun MainScreen(
 						uiSettings = MapUiSettings(zoomControlsEnabled = false),
 					) {
 						markerStates.forEach { (state, id) ->
-							Log.d("MainScreen", "Aggiunto un marker")
 							Marker(
 								state = state,
 								tag = id,
@@ -274,7 +273,6 @@ fun getUserLocationAndUpdateMap(
 
 	// Controlla i permessi e ottieni la posizione
 	LaunchedEffect(Unit) {
-		Log.d("MainActivity", "Chiedo permessi di localizzazione")
 		while (!PermissionUtils.hasLocationPermission(activity)) {
 			PermissionUtils.requestLocationPermission(activity)
 		}

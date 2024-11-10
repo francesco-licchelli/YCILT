@@ -10,11 +10,21 @@ import com.example.ycilt.others_audio.Category
 import com.example.ycilt.utils.NetworkUtils.getRequest
 import com.example.ycilt.utils.ToastManager.displayToast
 import com.example.ycilt.utils.Urls.ADDR_TO_COORD_API
+import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
 
 fun Boolean.toInt() = if (this) 1 else 0
 fun Int.toBoolean() = this != 0
+
+fun JSONArray.toList(): List<JSONObject> {
+	val list = mutableListOf<JSONObject>()
+	for (i in 0 until length()) {
+		list.add(getJSONObject(i))
+	}
+	return list
+}
+
 
 object Constants {
 	const val MAX_FILE_SIZE: Long = 5 * 1024 * 1024
